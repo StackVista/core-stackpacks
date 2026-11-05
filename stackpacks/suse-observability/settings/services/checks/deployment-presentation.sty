@@ -1,0 +1,64 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Checks"
+    description: "ComponentPresentation for SUSE Observability Checks"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-checks-service
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: |-
+        label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability")
+        and label IN ("app.kubernetes.io/component:server", "app.kubernetes.io/component:checks")
+        and type in ("deployment", "service")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: monitors
+                title: Monitors
+                order: 100
+                metrics:
+                  - metricId: sts-checks-deployment-active-monitors-count
+                  - metricId: sts-checks-deployment-failing-monitors
+    metrics:
+      -
+        metricId: sts-checks-deployment-active-monitors-count
+        description: 'Active monitors'
+        name: Active monitors count
+        metricQueries:
+          - expression: |
+              count(count without (monitorResult) (stackstate_stackstate_monitor_last_run_timestamp {
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }))
+            alias: Active monitors
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-checks-deployment-failing-monitors
+        description: 'Failing monitors'
+        name: Failing monitors
+        metricQueries:
+          - expression: |
+              sum by (monitorName) (count_over_time(stackstate_stackstate_monitor_last_run_timestamp {
+                monitorResult = "FAILURE",
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]) > 0)
+            alias: "${monitorName} fail count"
+        chart:
+          _type: TimeSeriesChart
+          unit: short

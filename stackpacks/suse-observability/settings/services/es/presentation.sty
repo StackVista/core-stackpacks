@@ -1,0 +1,71 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Elasticsearch"
+    description: "ComponentPresentation for SUSE Observability Elasticsearch"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-elasticsearch-pod
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:elasticsearch") AND  label IN("app.kubernetes.io/part-of:stackstate-k8s", "app.kubernetes.io/part-of:suse-observability") and type in ("service", "pod")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: elasticsearch
+                title: Elasticsearch
+                order: 100
+                metrics:
+                  - metricId: sts-es-current-index-size
+                  - metricId: sts-es-storage
+    metrics:
+      -
+        metricId: sts-es-current-index-size
+        name: SUSE Observability ElasticSearch - Current index disk space
+        description: Amount of data stored on ElasticSearch
+        metricQueries:
+          - expression: |-
+              sum(label_replace(stackstate_elasticsearch_indices_store_size_bytes_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}"
+              }, "sts_index","$1","index", ".*(sts_k8s_logs|sts_multi_metrics|sts_internal_events|sts_topology_events|sts_generic_events|sts_trace_events|sts_annotations).*")) by (sts_index)  / 1000000000
+            alias: "${sts_index}"
+        chart:
+          _type: TimeSeriesChart
+          unit: gbytes
+      -
+        metricId: sts-es-storage
+        name: Volume usage
+        description: "Percentage of persistent volume capacity used by Elasticsearch."
+        metricQueries:
+          - expression: |-
+              max by (storage)(label_replace(
+                max_over_time(kubernetes_kubelet_volume_stats_used_bytes{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  persistentvolumeclaim=~"data-.*-(elasticsearch-master-\\d)"
+                }[5m]) / max_over_time(kubernetes_kubelet_volume_stats_capacity_bytes{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  persistentvolumeclaim=~"data-.*-(elasticsearch-master-\\d)"
+                }[5m]), "storage", "$1", "persistentvolumeclaim", "data-.*-(elasticsearch-.*)"))
+            alias: ${storage}
+        chart:
+          _type: GaugeChart
+          unit: percentunit
+          decimals: 0
+          max: 1
+          calculation: last
+          thresholds:
+            defaultColor: "#33A02C"
+            steps:
+              - color: "#E31A1C"
+                value: 0.9
+              - color: "#FF7F00"
+                value: 0.8
+            mode: absolute

@@ -1,0 +1,181 @@
+nodes:
+  - _type: "Monitor"
+    name: "Receiver - unique element budget saturation"
+    tags:
+      - receiver
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-budget-saturation
+    status: "ENABLED"
+    description: "The SUSE Observability receiver has a budget for the number of unique elements (agents, connections, processes, etc...) it will accept data for within a certain time. If this budget is exceeded, the receiver will stop accepting new elements. This monitor will alert when the budget is exceeded."
+    arguments:
+      comparator: GT
+      failureState: "DEVIATING"
+      titleTemplate: "Receiver - unique element budget saturation - ${element_type}"
+      threshold: 0.95
+      metric:
+        query: |-
+          sum by (namespace, cluster_name, pod_name, element_type) (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_count{kube_app_component=~"receiver.*"}[5m]) / stackstate_stackstate_receiver_unique_element_passed_max{kube_app_component=~"receiver.*"})
+        aliasTemplate: "${element_type} saturation"
+        unit: percentunit
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/receiver/budget-saturation.md.hbs
+  - _type: "Monitor"
+    name: "Receiver - hourly element budget saturation"
+    tags:
+      - receiver
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-hourly-budget-saturation
+    status: "ENABLED"
+    description: "The SUSE Observability receiver has an budget for the number of elements (agents, connections, processes, etc..) it will accept data for within an hour. If this budget is exceeded, the receiver will stop accepting new elements. This monitor will alert when the budget is exceeded."
+    arguments:
+      comparator: GT
+      titleTemplate: "Receiver - hourly element budget saturation - ${element_type}"
+      failureState: "DEVIATING"
+      threshold: 0.95
+      metric:
+        query: |-
+          sum by (namespace, cluster_name, pod_name, element_type) (avg_over_time(stackstate_stackstate_receiver_element_create_passed_count{kube_app_component=~"receiver.*"}[5m]) / stackstate_stackstate_receiver_element_create_passed_max{kube_app_component=~"receiver.*"})
+        aliasTemplate: "${element_type} hourly saturation"
+        unit: percentunit
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/receiver/hourly-budget-saturation.md.hbs
+  - _type: "Monitor"
+    name: "Receiver - Maximum number of elements exceeded"
+    tags:
+      - receiver
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-max-elements-exceeded
+    status: "ENABLED"
+    description: "The SUSE Observability receiver has a limit on the maximum number of unqiue elements (agents, connections, processes, etc..) it will accept data for. If this limit is exceeded, the receiver will stop accepting new elements. This monitor will alert when the limit is exceeded."
+    arguments:
+      comparator: GTE
+      titleTemplate: "Receiver - Maximum number of elements exceeded - ${element_type}"
+      failureState: "DEVIATING"
+      threshold: 1.0
+      metric:
+        query: |-
+          sum by (namespace, cluster_name, pod_name, element_type) (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_count{kube_app_component=~"receiver.*"}[5m]))
+          / sum by (namespace, cluster_name, pod_name, element_type) (stackstate_stackstate_receiver_unique_element_passed_max{kube_app_component=~"receiver.*"})
+        aliasTemplate: "# of ${element_type} elements"
+        unit: short
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/receiver/budget-saturation.md.hbs
+  - _type: "Monitor"
+    name: "Receiver - Maximum number of hourly elements exceeded"
+    tags:
+      - receiver
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-hourly-max-elements-exceeded
+    status: "ENABLED"
+    description: "The SUSE Observability receiver has a limit on the maximum number of elements (agents, connections, processes, etc..) it will accept data for within an hour. If this hourly limit is exceeded, the receiver will stop accepting new elements for the rest of the hour. This monitor will alert when the limit is exceeded."
+    arguments:
+      comparator: GTE
+      titleTemplate: "Receiver - Maximum number of hourly elements exceeded - ${element_type}"
+      failureState: "DEVIATING"
+      threshold: 1.0
+      metric:
+        query: |-
+          sum by (namespace, cluster_name, pod_name, element_type) (avg_over_time(stackstate_stackstate_receiver_element_create_passed_count{kube_app_component=~"receiver.*"}[5m]))
+          / sum by (namespace, cluster_name, pod_name, element_type) (stackstate_stackstate_receiver_element_create_passed_max{kube_app_component=~"receiver.*"})
+        aliasTemplate: "# of ${element_type} elements"
+        unit: short
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/receiver/hourly-budget-saturation.md.hbs
+  - _type: "Monitor"
+    name: "Receiver - Active number of http requests growing"
+    tags:
+      - receiver
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-active-http-requests-growing
+    status: "ENABLED"
+    description: "The number of active http requests should not keep growing. This can happen for short periods of time (for example with a sudden spike of traffic), but if it keeps growing, it is a sign of a problem."
+    arguments:
+      comparator: GT
+      failureState: "CRITICAL"
+      threshold: 0.0
+      metric:
+        query: |-
+          sum by(namespace, cluster_name, pod_name) (min_over_time(delta(stackstate_receiver_akka_http_requests_active{kube_app_component=~"receiver.*"}[1m])[5m:1m]))
+        aliasTemplate: "# of active requests"
+        unit: short
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/receiver/http-growing-requests.md.hbs
+  - _type: "Monitor"
+    name: "Receiver - No data received"
+    tags:
+      - receiver
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-no-data
+    status: "ENABLED"
+    description: "When SUSE Observability is not receiving data this monitor will trigger."
+    arguments:
+      failureState: "DEVIATING"
+      threshold: 0.00000001
+      comparator: LTE
+      metric:
+        query: |-
+          sum by (cluster_name, namespace, pod_name) (rate(stackstate_receiver_agent_request{valid_api_key="true"}[5m]))
+        aliasTemplate: "# of requests, valid_api_key=${valid_api_key}"
+        unit: short
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: |-
+      No more data flowing into SUSE Observability will result in most of the topology slowly disappearing based on timeouts.
+      Common causes are:
+      - An invalid api key is used by the agent, if this is the case there will be 2 lines in the chart, one for valid_api_key="true" and one for valid_api_key="false"
+      - SUSE Observability agents in the cluster are not (yet) running
+      - Network connectivity issues between the agents in the cluster and SUSE Observability, these can also be caused by, for example firewalls or proxy servers.
+
+      In case of invalid api keys try [this query in the metrics explorer](/#/metrics?promql=rate(stackstate_receiver_agent_request{valid_api_key%3D"false"}[%24{__rate_interval}])) to see the network addresses for the agents with the invalid api key and redeploy them with a valid api key.
+  - _type: "Monitor"
+    name: "Receiver - Logs rejected"
+    tags:
+      - receiver
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-logs-rejected
+    status: "ENABLED"
+    description: "SUSE Observability reserves disk space for logs such that the retention period (default 7 days) can be met for all logs. Based on retention and available disk space each log source is allocated a fixed amount of log space per hour, any excessive logs will be rejected (reported as truncated in the log) however short-lived spikes are accepted. When logs are rejected this monitor triggers."
+    arguments:
+      failureState: "DEVIATING"
+      threshold: 0
+      comparator: GT
+      metric:
+        query: |-
+          sum by (cluster_name, namespace, pod_name) (rate(stackstate_stackstate_receiver_events_rejected_size{element_type="k8sLogs"}[5m]))
+        aliasTemplate: "Rejected logs (bytes) per second"
+        unit: bytes/sec(IEC)
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/receiver/rejected-logs.md.hbs
+  - _type: "Monitor"
+    name: "Receiver - Memory Limiter saturation"
+    tags:
+      - receiver
+      - memory
+    function: urn:stackpack:common:monitor-function:threshold
+    arguments:
+      metric:
+        query: "stackstate_stackstate_receiver_memory_limiter_claimed_size / stackstate_stackstate_receiver_memory_limiter_limit"
+        unit: "percentunit"
+        aliasTemplate: "Memory Limiter saturation % = ${namespace}"
+      threshold: 0.8
+      comparator: GTE
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    identifier: urn:stackpack:suse-observability:monitor:sts-receiver-memory-limiter-saturation
+    status: "ENABLED"
+    description: "he SUSE Observability receiver rejects requests if the allocated memory is (almost) exhausted. This protects the receiver from sudden spikes in the incoming data volume. However if this happens permanently or for long periods data will be dropped and the receiver needs more memory."
+    intervalSeconds: 60
+    remediationHint: !include services/receiver/memory-limiter.md.hbs

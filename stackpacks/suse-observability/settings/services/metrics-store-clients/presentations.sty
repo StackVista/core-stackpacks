@@ -1,0 +1,130 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Metrics Store Clients - Circuit Breaker"
+    description: "ComponentPresentation for SUSE Observability Metrics Store Clients - Circuit Breaker"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-metrics-store-clients-circuit-breaker
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:server", "app.kubernetes.io/component:api", "app.kubernetes.io/component:checks", "app.kubernetes.io/component:sync", "app.kubernetes.io/component:health-sync") and type in ("pod", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          - tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              - sectionId: metrics
+                title: Metrics
+                order: 100
+                metrics:
+                  - metricId: sts-metric-store-circuit-breaker
+    metrics:
+      -
+        metricId: sts-metric-store-circuit-breaker
+        description: 'States: closed (0), open (1) or half-open (2)'
+        name: Metrics client - Circuit Breaker
+        metricQueries:
+          - expression: |-
+              sum by (pod_name)(max_over_time(stackstate_stackstate_metrics_circuit_breaker_status{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[${__interval}]))
+            alias: "${pod_name}"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+
+  - _type: ComponentPresentation
+    name: "SUSE Observability Metrics Store Clients - PromQL Hit"
+    title: "SUSE Observability Metrics Store Clients - PromQL Hit"
+    description: "ComponentPresentation for SUSE Observability Metrics Store Clients - PromQL Hit"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-metrics-store-clients-promql-hit-deployment
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:server", "app.kubernetes.io/component:api", "app.kubernetes.io/component:checks") and type in ("deployment", "service")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          - tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              - sectionId: metrics
+                title: Metrics
+                order: 100
+                metrics:
+                  - metricId: sts-checks-deployment-promql-hit-pct
+    metrics:
+      -
+        metricId: sts-checks-deployment-promql-hit-pct
+        description: 'PromQL cache hit %'
+        name: PromQL cache hit %
+        metricQueries:
+          - expression: |
+              sum by (cluster_name, namespace, pod_name) (rate(stackstate_caffeine_cache_hit{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              } )) / sum by (cluster_name, namespace, pod_name) (rate(stackstate_caffeine_cache_requests{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              } ))
+            alias: hit % - ${pod_name}
+            componentIdentifierTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+        chart:
+          _type: TimeSeriesChart
+          unit: percentunit
+
+  - _type: ComponentPresentation
+    name: "SUSE Observability Metrics Store Clients - PromQL Hit"
+    title: "SUSE Observability Metrics Store Clients - PromQL Hit"
+    description: "ComponentPresentation for SUSE Observability Metrics Store Clients - PromQL Hit"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-metrics-store-clients-promql-hit-pod
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:server", "app.kubernetes.io/component:api", "app.kubernetes.io/component:checks") and type in ("pod")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          - tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              - sectionId: metrics
+                title: Metrics
+                order: 100
+                metrics:
+                  - metricId: sts-checks-pod-promql-hit-pct
+    metrics:
+      -
+        metricId: sts-checks-pod-promql-hit-pct
+        description: 'PromQL cache hit %'
+        name: PromQL cache hit %
+        metricQueries:
+          - expression: |
+              sum(rate(stackstate_caffeine_cache_hit{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              } )) / sum(rate(stackstate_caffeine_cache_requests{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              } ))
+            alias: hit %
+        chart:
+          _type: TimeSeriesChart
+          unit: percentunit

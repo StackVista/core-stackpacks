@@ -1,0 +1,358 @@
+nodes:
+  - _type: "Monitor"
+    name: "ClickHouse - backups performed"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-backups-not-executed
+    arguments:
+      metric:
+        query: |-
+          sum(increase(stackstate_clickhouse_backup_successful_uploads{kube_app_name="clickhouse"}[12h])) by (cluster_name, namespace, statefulset) or sum(stackstate_clickhouse_backup_number_backups_remote_expected{kube_app_name="clickhouse"}) by (cluster_name, namespace, statefulset) * 0
+        unit: "short"
+        aliasTemplate: "Number of backups execution in 12h window"
+      comparator: LTE
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:statefulset/${statefulset}"
+      titleTemplate: "Backup performed in the last 12 hours"
+    intervalSeconds: 3600
+    remediationHint: "Potential reasons why backups haven't been executed:\n- wrong configuration of MinIO (like secrets, bucket name and so on)\n- interval between backups is longer than 12h (you have to change the configuration of the Monitor)\n\nTo investigate the problem you should check:\n- logs of `backup` container\n- logs/status of `MinIO` pods"
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - too many Distributed Files to insert"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-distributed-files-to-insert-high
+    arguments:
+      metric:
+        query: sum(stackstate_ClickHouseMetrics_DistributedFilesToInsert) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of pending files to process for asynchronous insertion into Distributed tables"
+      comparator: GT
+      threshold: 50
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - has too many Distributed Files to insert"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-distributed-files-to-insert-high.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - rejected insert"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-rejected-insert
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_RejectedInserts[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times the INSERT of a block to a MergeTree table was rejected"
+      comparator: GT
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - rejected INSERT statements occurred"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-rejected-insert.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - delayed insert"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-delayed-insert-throttling
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_DelayedInserts[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times the INSERT of a block to a MergeTree table was throttled due to high number of active data parts for partition"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - delayed INSERT statements occurred"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-delayed-insert-throttling.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - too many parts per partition"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-max-part-count-for-partition
+    arguments:
+      metric:
+        query: sum (stackstate_ClickHouseAsyncMetrics_MaxPartCountForPartition) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Maximum number of parts per partition across all partitions of all tables of MergeTree family"
+      comparator: GT
+      threshold: 300
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - too many parts per a partition"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-max-part-count-for-partition.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - readonly replica"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-readonly-replica
+    arguments:
+      metric:
+        query: sum (stackstate_ClickHouseMetrics_ReadonlyReplica) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of Replicated tables that are currently in readonly state"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - readOnly replica occurred"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-readonly-replica.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - too many connections"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-too-many-connections
+    arguments:
+      metric:
+        query: sum (stackstate_ClickHouseMetrics_HTTPConnection + stackstate_ClickHouseMetrics_TCPConnection + stackstate_ClickHouseMetrics_MySQLConnection) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of active connections"
+      comparator: GT
+      threshold: 100
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - too many connections to ClickHouse"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-too-many-connections.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - too many queries"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-too-many-running-queries
+    arguments:
+      metric:
+        query: sum ((stackstate_ClickHouseMetrics_Query - stackstate_ClickHouseMetrics_PendingAsyncInsert) or stackstate_ClickHouseMetrics_Query) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of executing queries"
+      comparator: GT
+      threshold: 80
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - too many running queries"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-too-many-running-queries.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - ZooKeeper hardware exceptions"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-zookeeper-hardware-exceptions
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_ZooKeeperHardwareExceptions[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of exceptions while working with ZooKeeper"
+      comparator: GT
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - too many exceptions of ZooKeeper"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-zookeeper-hardware-exceptions.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - too many ZooKeeper session"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-zookeeper-session
+    arguments:
+      metric:
+        query: max(stackstate_ClickHouseMetrics_ZooKeeperSession) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of sessions (connections) to ZooKeeper"
+      comparator: GT
+      threshold: 1
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - too many ZooKeeper sessions"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-zookeeper-session.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - replicated part checks failed"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-replicated-part-checks-failed
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_ReplicatedPartChecksFailed[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times the advanced search for a data part on replicas did not give result or when unexpected part has been found and moved away"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - advanced search for a data part on replicas did not give result or when unexpected part has been found and moved away occurred"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-replicated-part-checks-failed.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - replicated part fetches failed"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-replicated-part-failed-fetches
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_ReplicatedPartFailedFetches[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times a data part was failed to download from replica of a ReplicatedMergeTree table"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - data part was failed to download from replica of a ReplicatedMergeTree table"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-clickhouse-replicated-part-failed-fetches.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - replicated data loss"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-replicated-data-loss
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_ReplicatedDataLoss[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times a data part that we wanted doesn't exist on any replica"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - data part that we wanted doesn't exist on any replica"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-replicated-data-loss.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - data after merge differs from replica"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-data-after-merge-differs-from-replica
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_DataAfterMergeDiffersFromReplica[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times data after merge is not byte-identical to the data on another replicas"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - data after merge is not byte-identical to the data on another replicas"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-data-after-merge-differs-from-replica.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - distributed sync insertion timeout"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-distributed-sync-insertion-timeout-exceeded
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_DistributedSyncInsertionTimeoutExceeded[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times a timeout has exceeded while waiting for shards during synchronous insertion into a Distributed table"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - a timeout has exceeded while waiting for shards during synchronous insertion into a Distributed table"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-distributed-sync-insertion-timeout-exceeded.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - file descriptor buffer read or write failed"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-file-descriptor-buffer-read-or-write-failed
+    arguments:
+      metric:
+        query: sum(increase(stackstate_ClickHouseProfileEvents_ReadBufferFromFileDescriptorReadFailed[1m]) + increase(stackstate_ClickHouseProfileEvents_WriteBufferFromFileDescriptorWriteFailed[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of times the write or read to a file descriptor have failed"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - write or read operation to a file descriptor have failed occurred"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-file-descriptor-buffer-read-or-write-failed.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "ClickHouse - slow reads"
+    tags:
+      - clickhouse
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:clickhouse-slow-read
+    arguments:
+      metric:
+        query: sum (increase(stackstate_ClickHouseProfileEvents_SlowRead[1m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Number of reads from a file that were slow"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "ClickHouse - slow reads occurred"
+    intervalSeconds: 60
+    remediationHint: !include services/clickhouse/clickhouse-slow-read.md.hbs
+    status: "ENABLED"

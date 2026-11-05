@@ -1,0 +1,11 @@
+The # of active requests for SUSE Observability receiver has only been growing for the last 5 minutes.
+This either means that there is a huge and sudden increase in load but much more likely it means that the receiver is “stuck” and not able to write data to Kafka, eventually the requests will all timeout and will be retried later. The end result will be that data doesn't receive any more data and metrics, health states etc. go stale, components disappear.
+
+### Troubleshoot steps
+1. Go to the [metrics](/#/components/{{ componentUrnForUrl }}/metrics
+2. Verify the `Active HTTP Requests` chart, normal behavior is that it fluctuates but is pretty much at a constant level even quite low at about 0 to 5 active requests. If this alert triggers it is expected to be a continuously increasing value.
+3. After confirming the increasing value restart the receiver pod using
+```
+kubectl delete pod  {{ labels.pod_name }}  -n {{ labels.namespace }}
+```
+4. After restart check the same charts again for the next 10 minutes to make sure issue is fixed.

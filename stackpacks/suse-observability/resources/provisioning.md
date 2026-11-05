@@ -1,0 +1,3 @@
+## Provisioning...
+
+Provisioning SUSE Observability monitoring. Please wait a moment.

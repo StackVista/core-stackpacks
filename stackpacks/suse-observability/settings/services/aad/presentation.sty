@@ -1,0 +1,66 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability AAD"
+    description: "ComponentPresentation for SUSE Observability AAD"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-aad
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:spotlight") and type = "pod"
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: aad
+            title: AAD
+            order: 100
+            sections:
+              -
+                sectionId: streams
+                title: Streams
+                order: 100
+                metrics:
+                  - metricId: aad-checked
+                  - metricId: aad-duration
+                  - metricId: aad-throughput
+    metrics:
+      -
+        metricId: aad-checked
+        description: 'Number of streams checked'
+        name: AAD - Streams checked
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name)(stackstate_spotlight_streams_checked{
+                cluster_name="${tags.singleValue('cluster-name')}", namespace="${tags.singleValue('namespace')}", pod_name="${name}"
+              }[${__rate_interval}])
+            alias: Streams checked
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: aad-duration
+        description: 'Time taken by AAD steps'
+        name: AAD - 95% Step duration
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.95, sum by (cluster_name, namespace, step, le)(rate(stackstate_spotlight_step_timings_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}", namespace="${tags.singleValue('namespace')}", pod_name="${name}"
+              }[5m])))
+            alias: Step ${step}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: aad-throughput
+        description: 'Number of AAD steps'
+        name: AAD - Throughput
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, step)(rate(stackstate_spotlight_step_timings_seconds_count{
+                cluster_name="${tags.singleValue('cluster-name')}", namespace="${tags.singleValue('namespace')}", pod_name="${name}"
+              }[5m]))
+            alias: Step ${step}
+        chart:
+          _type: TimeSeriesChart
+          unit: ops

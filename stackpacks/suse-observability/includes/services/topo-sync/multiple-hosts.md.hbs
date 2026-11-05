@@ -1,0 +1,6 @@
+The Topology Synchronization gets data from the agent. Snapshots of data should come from a single agent. If multiple agents
+send snapshot data to the same synchronization, this is regarded a violation, because there are multiple sources of truth.
+
+### Remediation
+1. Investigate the error in details through the stackstate cli (`sts-cli topology-sync`)
+2. Remediate by disabling the agent sending duplicate data.

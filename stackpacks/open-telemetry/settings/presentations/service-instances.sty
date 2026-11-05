@@ -1,0 +1,451 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Otel Service Instances presentation"
+    description: "ComponentPresentation for Otel Service Instances"
+    identifier: urn:stackpack:open-telemetry:component-presentation:service-instance
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: (label = "stackpack:open-telemetry" and type = "otel service instance")
+    rank:
+      specificity: 10
+    presentation:
+      icon: !icon service-instances.svg
+      filters:
+        - filterId: "otel_namespace"
+        - filterId: "otel_service"
+        - filterId: "k8s_cluster"
+        - filterId: "k8s_namespace"
+      topology:
+        groupingEnabled: true
+        showIndirectRelations: false
+        minimumGroupSize: 8
+        groupedByLayers: false
+        groupedByDomains: true
+        autoGrouping: true
+        connectedComponents: true
+      overview:
+        name:
+          singular: "service instance"
+          plural: "service instances"
+          title: "Service instances"
+        mainMenu:
+          group: "Open Telemetry"
+          order: 99
+        columns:
+          - columnId: health
+          - columnId: otel_name
+            title: Service Instance
+          - columnId: otel_namespace
+            title: OTel Namespace
+          - columnId: otel_service
+            title: "Service"
+            projection:
+              _type: "ComponentLinkProjection"
+              name: "tags.singleValue('service.name')"
+              identifier: "'urn:opentelemetry:namespace/' + tags.singleValue('service.namespace') + ':service/' + tags.singleValue('service.name')"
+          - columnId: otel_k8s_cluster
+            title: "Kubernetes Cluster"
+            projection:
+              _type: ComponentLinkProjection
+              name: "tags.singleValue('cluster-name')"
+              identifier: "'urn:cluster:/kubernetes:' + tags.singleValue('cluster-name')"
+          - columnId: otel_k8s_namespace
+            title: "Kubernetes Namespace"
+            projection:
+              _type: ComponentLinkProjection
+              name: "tags.singleValue('namespace')"
+              identifier: "'urn:kubernetes:/' + tags.singleValue('cluster-name') + ':namespace/' + tags.singleValue('namespace')"
+          - columnId: otel_service_instance_span_error_percent_summary
+            title: Span error %
+            projection:
+              _type: MetricProjection
+              sparkline: true
+              decimalPlaces: 2
+              unit: percentunit
+              query: |-
+                (sum by(service_namespace, service_name, service_instance_id)(rate(otel_span_calls_total{
+                   status_code="STATUS_CODE_ERROR", service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+                 }[5m])) or 0) /
+                 sum by(service_namespace, service_name, service_instance_id)(rate(otel_span_calls_total{
+                  service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+                 }[5m]))
+              metricId: service-instance-spans-error-rate
+          - columnId: otel_service_instance_span_duration_summary
+            title: Span duration
+            projection:
+              _type: MetricProjection
+              sparkline: true
+              decimalPlaces: 2
+              unit: s
+              # _seconds_ = telemetry gateway (target/new spanmetrics default); _milliseconds_ = standalone collector (current spanmetrics default, transitioning to s per OTel semantic conventions)
+              query: |-
+                (histogram_quantile(0.95, sum(rate(otel_span_duration_seconds_bucket{
+                  service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+                }[${__rate_interval}])) by (service_namespace, service_name, service_instance_id, le)))
+                or
+                (histogram_quantile(0.95, sum(rate(otel_span_duration_milliseconds_bucket{
+                  service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+                }[${__rate_interval}])) by (service_namespace, service_name, service_instance_id, le)) / 1000)
+              metricId: service-instance-spans-duration
+          - columnId: otel_service_instance_span_rate_summary
+            title: Span rate
+            projection:
+              _type: MetricProjection
+              sparkline: true
+              decimalPlaces: 2
+              unit: cps
+              query: |-
+                sum by(service_namespace, service_name, service_instance_id)(rate(otel_span_calls_total{
+                  service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+                }[${__rate_interval}]))
+              metricId: service-instance-spans-rate
+          - columnId: otel_sdk_language
+        sort:
+          - columnId: health
+          - columnId: otel_name
+      highlight:
+        title: "OTel service"
+        fields:
+          - fieldId: "namespace"
+            title: "OTel Namespace"
+            order: 85.0
+            projection:
+              _type: ComponentLinkProjection
+              name: "tags.singleValue('service.namespace')"
+              identifier: "'urn:opentelemetry:namespace/' + tags.singleValue('service.namespace')"
+          - fieldId: "service"
+            title: "Service"
+            order: 82.5
+            projection:
+              _type: ComponentLinkProjection
+              name: "tags.singleValue('service.name')"
+              identifier: "'urn:opentelemetry:namespace/' + tags.singleValue('service.namespace') + ':service/' + tags.singleValue('service.name')"
+          - fieldId: "language"
+            title: "Language"
+            order: 81.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('telemetry.sdk.language')"
+          - fieldId: "k8s_cluster"
+            title: "K8s Cluster"
+            order: 77.5
+            projection:
+              _type: ComponentLinkProjection
+              name: "tags.singleValue('cluster-name')"
+              identifier: "'urn:cluster:/kubernetes:' + tags.singleValue('cluster-name')"
+          - fieldId: "k8s_namespace"
+            title: "K8s Namespace"
+            order: 75.0
+            projection:
+              _type: ComponentLinkProjection
+              name: "tags.singleValue('namespace')"
+              identifier: "'urn:kubernetes:/' + tags.singleValue('cluster-name') + ':namespace/' + tags.singleValue('namespace')"
+        provisioning:
+          topologySourceSelector: "source.mapping.identifier == 'urn:stackpack:open-telemetry:otel-component-mapping:service-instance'"
+          showConfiguration: false
+          showStatus: false
+        relatedResources:
+          - resourceId: "otel_service_instance_service_instances"
+            title: "Related service instances"
+            order: 2.0
+            topologyQuery: '(withNeighborsOf(direction = "both", components = (identifier = "${identifiers[0]}"), levels = "1")) and type = "otel service instance"'
+            presentationIdentifier: "urn:stackpack:open-telemetry:component-presentation:service-instance"
+          - resourceId: "otel_service_instance_services"
+            title: "Related services"
+            order: 1.0
+            topologyQuery: '(withNeighborsOf(direction = "up", components = (withNeighborsOf(direction = "both", components = (identifier = "${identifiers[0]}"), levels = "1") and type = "otel service instance") , levels = "1") and type = "otel service")'
+            presentationIdentifier: "urn:stackpack:open-telemetry:component-presentation:service"
+          - resourceId: "otel_service_instance_pods"
+            title: "Related pods"
+            order: 3.0
+            topologyQuery: >-
+              label = "source-name:${tags.singleValue('k8s.pod.name')}"
+            presentationIdentifier: "urn:stackpack:open-telemetry:view-type:pod-link"
+          - resourceId: "otel_service_instance_hosts"
+            title: "Related hosts"
+            order: 4.0
+            topologyQuery: >-
+              label = "source-type:host" AND label = "source-name:${tags.singleValue('k8s.node.name')}"
+            presentationIdentifier: "urn:stackpack:open-telemetry:view-type:host-link"
+        events:
+          showEvents: true
+          relatedResourcesQuery: |
+            ((withNeighborsOf(direction = "both", components = (identifier = "${identifiers[0]}"), levels = "1")) and type = "otel service instance")
+              OR
+            (withNeighborsOf(direction = "up", components = (withNeighborsOf(direction = "both", components = (identifier = "${identifiers[0]}"), levels = "1") and type = "otel service instance") , levels = "1") and type = "otel service")
+              OR
+            (identifier = "${identifiers[0]}")
+        metrics:
+          - sectionId: traces
+            title: Traces
+            description: "Rate, Errors and Duration metrics for the trace spans"
+            order: 100
+            metrics:
+              - metricId: service-instance-spans-rate
+                order: 100
+              - metricId: service-instance-spans-error-rate
+                order: 90
+              - metricId: service-instance-spans-duration
+                order: 80
+
+      summary:
+        metrics:
+          - summaryMetricId: service-instance-spans-rate
+            name: Span rate
+            description: The number of spans for the service instance per second
+            order: 100
+            unit: cps
+            query: sum(rate(otel_span_calls_total{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}]))
+            metricId: service-instance-spans-rate
+          -
+            summaryMetricId: service-instance-spans-error-rate
+            name: Span error %
+            description: The percentage of errors per second
+            order: 90
+            unit: percentunit
+            query: |
+              (sum(rate(otel_span_calls_total{status_code="STATUS_CODE_ERROR", service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[5m])) or 0) /
+              sum(rate(otel_span_calls_total{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[5m]))
+            metricId: service-instance-spans-error-rate
+          -
+            summaryMetricId: service-instance-spans-duration
+            name: Span duration
+            description:
+            order: 80
+            unit: s
+            # _seconds_ = telemetry gateway (target/new spanmetrics default); _milliseconds_ = standalone collector (current spanmetrics default, transitioning to s per OTel semantic conventions)
+            query: |-
+              (histogram_quantile(0.95, sum(rate(otel_span_duration_seconds_bucket{
+                service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+              }[${__rate_interval}])) by (le)))
+              or
+              (histogram_quantile(0.95, sum(rate(otel_span_duration_milliseconds_bucket{
+                service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+              }[${__rate_interval}])) by (le)) / 1000)
+            metricId: service-instance-spans-duration
+
+      tracesPerspective:
+        showTraces: true
+        spanFilter:
+          attributes:
+            service.namespace: ["${tags.singleValue('service.namespace')}"]
+            service.name: ["${tags.singleValue('service.name')}"]
+            service.instance.id: ["${tags.singleValue('service.instance.id')}"]
+      metricPerspective:
+        tabs:
+          -
+            tabId: dotnet
+            title: .NET
+            order: 80
+            sections:
+              -
+                sectionId: gc
+                title: GC
+                order: 30
+                metrics:
+                  - metricId: dotnet-gc-collections
+                  - metricId: dotnet-gc-duration
+                  - metricId: dotnet-gc-allocated
+                  - metricId: dotnet-gc-objects-and-committed-memory
+                  - metricId: dotnet-gc-heap-size
+                  - metricId: dotnet-gc-heap-fragmentation
+          -
+            tabId: jvm
+            title: JVM
+            order: 80
+            sections:
+              -
+                sectionId: gc
+                title: GC
+                order: 20
+                metrics:
+                  - metricId: jvm_gc_durations_95th_quantile
+                  - metricId: jvm_gc_per_second
+                  - metricId: jvm_mem_after_last_gc
+              -
+                sectionId: mem
+                title: Memory
+                order: 30
+                metrics:
+                  - metricId: jvm_heap_memory
+                  - metricId: jvm_non_heap_memory
+          -
+            tabId: traces
+            title: Traces Performance
+            order: 10
+            sections:
+              -
+                sectionId: spans
+                title: Spans
+                order: 10
+                metrics:
+                  - metricId: service-instance-spans-rate
+                  - metricId: service-instance-spans-error-rate
+                  - metricId: service-instance-spans-duration
+    metrics:
+      -
+        metricId: dotnet-gc-collections
+        description: 'GC Collections per Second'
+        name: .NET GC Collections
+        metricQueries:
+          - expression: |-
+              rate(process_runtime_dotnet_gc_collections_count_total{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}])
+            alias: Generation - ${generation}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: dotnet-gc-duration
+        description: 'GC Duration per Collection'
+        name: .NET GC Duration
+        metricQueries:
+          - expression: |-
+              rate(process_runtime_dotnet_gc_duration_nanoseconds_total{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}])
+            alias: duration(ns)
+        chart:
+          _type: TimeSeriesChart
+          unit: ns
+      -
+        metricId: dotnet-gc-allocated
+        description: 'Bytes allocated to GC Heap'
+        name: .NET GC Allocated
+        metricQueries:
+          - expression: |-
+              rate(process_runtime_dotnet_gc_allocations_size_bytes_total{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}])
+            alias: allocated
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: dotnet-gc-objects-and-committed-memory
+        description: 'Size of Uncollected Objects and Committed Vmem size for GC Heap'
+        name: .NET GC Objects and Committed Memory
+        metricQueries:
+          - expression: |-
+              process_runtime_dotnet_gc_objects_size_bytes{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}
+            alias: uncollected objects
+          - expression: |-
+              process_runtime_dotnet_gc_committed_memory_size_bytes{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}
+            alias: committed vmem heap size
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: dotnet-gc-heap-size
+        description: 'GC Heap size (including fragmentation)'
+        name: .NET GC Heap Size Bytes
+        metricQueries:
+          - expression: |-
+              process_runtime_dotnet_gc_heap_size_bytes{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}
+            alias: Generation - ${generation}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: dotnet-gc-heap-fragmentation
+        description: 'Heap Fragmentation size in Bytes'
+        name: .NET GC Heap Fragmentation Bytes
+        metricQueries:
+          - expression: |-
+              process_runtime_dotnet_gc_heap_fragmentation_size_bytes{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}
+            alias: Generation - ${generation}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: jvm_gc_durations_95th_quantile
+        description: 'GC operations that are slower than 95% of total gc operations.'
+        name: JVM GC Durations 95th Quantile
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.95, (rate(jvm_gc_duration_seconds_bucket{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}])))
+            alias: GC Name - ${jvm_gc_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: jvm_gc_per_second
+        description: 'Garbage collections per second.'
+        name: JVM GC Per Second
+        metricQueries:
+          - expression: |-
+              rate(jvm_gc_duration_seconds_count{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}])
+            alias: GC Name - ${jvm_gc_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: jvm_mem_after_last_gc
+        description: 'JVM memory size after last garbage collection.'
+        name: JVM Mem After Last GC
+        metricQueries:
+          - expression: |-
+              jvm_memory_used_after_last_gc_bytes{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}
+            alias: Memory Pool - ${jvm_memory_pool_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: jvm_heap_memory
+        description: 'JVM heap memory.'
+        name: JVM Heap Memory
+        metricQueries:
+          - expression: |-
+              jvm_memory_used_bytes{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}",jvm_memory_type="heap"}
+            alias: Memory Pool - ${jvm_memory_pool_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: jvm_non_heap_memory
+        description: 'JVM Non-Heap memory.'
+        name: JVM Non-Heap Memory
+        metricQueries:
+          - expression: |-
+              jvm_memory_used_bytes{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}",jvm_memory_type="non_heap"}
+            alias: Memory Pool - ${jvm_memory_pool_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: service-instance-spans-rate
+        description: The number of spans for the service instance per second
+        name: Span rate
+        metricQueries:
+          - expression: sum(rate(otel_span_calls_total{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}])) by (span_kind)
+            alias: 'All ${span_kind}'
+          - expression: sum(rate(otel_span_calls_total{status_code="STATUS_CODE_ERROR", service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[${__rate_interval}])) by (span_kind)
+            alias: 'Errors ${span_kind}'
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: service-instance-spans-error-rate
+        description: The percentage of errors per second
+        name: Span error rate
+        metricQueries:
+          - expression: |-
+              ((sum(rate(otel_span_calls_total{status_code="STATUS_CODE_ERROR", service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[5m])) by (span_kind)) or 0)
+              / sum(rate(otel_span_calls_total{service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"}[5m])) by (span_kind)
+            alias: '${span_kind}'
+        chart:
+          _type: TimeSeriesChart
+          unit: percentunit
+      -
+        metricId: service-instance-spans-duration
+        description:
+        name: Span duration
+        metricQueries:
+          # _seconds_ = telemetry gateway (target/new spanmetrics default); _milliseconds_ = standalone collector (current spanmetrics default, transitioning to s per OTel semantic conventions)
+          - expression: |-
+              (histogram_quantile(0.95, sum(rate(otel_span_duration_seconds_bucket{
+                  service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+                }[${__rate_interval}])) by (k8s_cluster_name, k8s_namespace_name, k8s_pod_name, span_kind, le)))
+              or
+              (histogram_quantile(0.95, sum(rate(otel_span_duration_milliseconds_bucket{
+                  service_namespace="${tags.singleValue('service.namespace')}", service_name="${tags.singleValue('service.name')}", service_instance_id="${tags.singleValue('service.instance.id')}"
+                }[${__rate_interval}])) by (k8s_cluster_name, k8s_namespace_name, k8s_pod_name, span_kind, le)) / 1000)
+            alias: '95th percentile ${span_kind}'
+        chart:
+          _type: TimeSeriesChart
+          unit: s

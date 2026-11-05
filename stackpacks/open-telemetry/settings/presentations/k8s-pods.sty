@@ -1,0 +1,19 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Otel Pod Extension"
+    description: "Extends the Pod presentation for OTel pods with related service instances"
+    identifier: urn:stackpack:open-telemetry:component-presentation:pod
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: (label = "stackpack:open-telemetry" and type = "pod")
+    rank:
+      specificity: 10
+    presentation:
+      highlight:
+        relatedResources:
+          - resourceId: "otel_pod_service_instances"
+            title: "Related service instances"
+            order: 1.0
+            topologyQuery: >-
+              type = "otel service instance" AND label = "k8s.pod.name:${name}"
+            presentationIdentifier: "urn:stackpack:open-telemetry:component-presentation:service-instance"

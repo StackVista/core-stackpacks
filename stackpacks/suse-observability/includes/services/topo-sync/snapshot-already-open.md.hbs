@@ -1,0 +1,6 @@
+The Topology Synchronization snapshot model requires that snapshots are properly closed in order to perform the cleanup of obsolete topology items.
+Observing subsequent starts of a snapshot is regarded as an error as it will lead to inconsistent topology.
+
+### Remediation
+1. Investigate the error in details through the stackstate cli (`sts-cli topology-sync`)
+2. Remediate by inspecting the agent or integration and finding the cause of the truncated snapshots.

@@ -1,0 +1,160 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Topology Sync"
+    description: "ComponentPresentation for SUSE Observability Topology Sync"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-topology-sync
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: |-
+        label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability")
+        and label IN ("app.kubernetes.io/component:sync", "app.kubernetes.io/component:server")
+        and type in ("pod", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: topology-sync
+                title: Topology Sync
+                order: 100
+                metrics:
+                  - metricId: sts-topo-sync-elements-total
+                  - metricId: sts-topo-sync-latency
+                  - metricId: sts-topo-sync-internal-latency
+                  - metricId: sts-topo-sync-changes-rate
+                  - metricId: sts-sync-kafka-lag
+              -
+                sectionId: storage
+                title: Storage
+                order: 100
+                metrics:
+                  - metricId: sts-topo-sync-storage
+    metrics:
+      -
+        metricId: sts-topo-sync-elements-total
+        description: 'Topology Sync total number of elements'
+        name: Topology Sync Elements count
+        metricQueries:
+          - expression: |-
+              stackstate_stackstate_sync_topo_total_counts{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }
+            alias: ${pod_name} - ${element_type}s
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-topo-sync-latency
+        description: 'Topology Sync latency per integration type measured from collection time to database'
+        name: Topology Sync Latency
+        metricQueries:
+          - expression: |-
+              max by (pod_name, integration_type)(stackstate_stackstate_sync_stage_latency_seconds_quantile{
+                start_stage="source",
+                end_stage="commit",
+                quantile="1.0",
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              })
+            alias: ${pod_name} - ${integration_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topo-sync-internal-latency
+        description: 'Topology Sync internal latency per integration type measured from reception time to database'
+        name: Topology Sync Internal Latency
+        metricQueries:
+          - expression: |-
+              max by (pod_name, integration_type)(stackstate_stackstate_sync_stage_latency_seconds_quantile{
+                start_stage="enterReceiver",
+                end_stage="commit",
+                quantile="1.0",
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              })
+            alias: ${pod_name} - ${integration_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topo-sync-changes-rate
+        description: 'Topology Sync changes rate per synchronization'
+        name: Topology Sync Changes rate
+        metricQueries:
+          - expression: |-
+              (sum by (node_id, operation_type, pod_name)(rate(stackstate_stackstate_sync_extTopo_changes{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[1m])) or sum by (node_id, operation_type, pod_name)(rate(stackstate_stackstate_sync_extTopo_changes_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[1m]))) > 0
+            alias: ${pod_name} - ${node_id} - ${operation_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: sts-sync-kafka-lag
+        description: 'Kafka consumer lag per topic'
+        name: Topology Sync Topic lag
+        metricQueries:
+          - expression: |-
+              sum by (pod_name, topic) (stackstate_kafka_consumer_consumer_fetch_manager_metrics_records_lag{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              })
+            alias: ${pod_name} - ${topic}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: sts-topo-sync-storage
+        name: Volume usage
+        description: "Percentage of persistent volume capacity used by Kafka, HBase, and Sync."
+        metricQueries:
+          - expression: |-
+              max by (storage)(label_replace(
+                max_over_time(kubernetes_kubelet_volume_stats_used_bytes{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  persistentvolumeclaim=~".*-(kafka-\\d|hbase-.*|sync-tmp)"
+                }[5m]) / max_over_time(kubernetes_kubelet_volume_stats_capacity_bytes{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  persistentvolumeclaim=~".*-(kafka-\\d|hbase-.*|sync-tmp)"
+                }[5m]), "storage", "$1", "persistentvolumeclaim", ".*-(kafka-.*|hbase-.*|sync-tmp)"))
+            alias: ${storage}
+        chart:
+          _type: GaugeChart
+          unit: percentunit
+          decimals: 0
+          calculation: last
+          thresholds:
+            defaultColor: "#33A02C"
+            steps:
+              - color: "#E31A1C"
+                value: 0.9
+              - color: "#FF7F00"
+                value: 0.8
+            mode: absolute
+

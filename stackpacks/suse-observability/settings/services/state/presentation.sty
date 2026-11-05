@@ -1,0 +1,134 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability State Propagation"
+    description: "ComponentPresentation for SUSE Observability State Propagation"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-state
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:state", "app.kubernetes.io/component:server") and type in ("pod", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: state-propagation
+                title: State Propagation
+                order: 100
+                metrics:
+                  - metricId: sts-topo-state-calc-duration
+                  - metricId: sts-topo-state-calc-batches-rate
+                  - metricId: sts-topo-state-calc-steps-duration
+                  - metricId: sts-topo-state-persistence-duration
+                  - metricId: sts-topo-state-queued-rate
+                  - metricId: sts-topo-state-latency
+    metrics:
+      -
+        metricId: sts-topo-state-calc-duration
+        description: 'State Propagation - Calculation duration'
+        name: State Propagation - Calculation duration
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_state_propagation_calculation_duration_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: "${pod_name}"
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topo-state-calc-batches-rate
+        description: 'State Propagation - Calculation batches rate'
+        name: State Propagation - Calculation batches rate
+        metricQueries:
+          - expression: |-
+              rate(stackstate_stackstate_state_propagation_calculation_duration_seconds_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[${__interval}])
+            alias: "${pod_name}"
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: sts-topo-state-calc-steps-duration
+        description: 'State Propagation - Calculation steps duration'
+        name: State Propagation - Calculation steps duration
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_state_propagation_calculation_steps_duration_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: ${pod_name} - ${step}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topo-state-persistence-duration
+        description: 'State Propagation - Persistence duration'
+        name: State Propagation - Persistence duration
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_state_propagation_persistence_duration_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: "${pod_name}"
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topo-state-queued-rate
+        description: 'State Propagation - Dequeued/Enqueued rate'
+        name: State Propagation - Dequeued commands rate
+        metricQueries:
+          - expression: |-
+              rate(stackstate_stackstate_state_propagation_dequeued_commands{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[${__interval}])
+            alias: ${pod_name} - Dequeued
+          - expression: |-
+              rate(stackstate_stackstate_state_propagation_enqueued_commands{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[${__interval}])
+            alias: ${pod_name} - Enqueued
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: sts-topo-state-latency
+        description: 'State State Propagation - Latency'
+        name: State Propagation - Latency
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_state_calculation_latency_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: "${pod_name}"
+        chart:
+          _type: TimeSeriesChart
+          unit: s

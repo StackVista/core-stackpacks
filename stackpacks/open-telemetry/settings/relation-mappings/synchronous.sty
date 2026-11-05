@@ -1,0 +1,49 @@
+nodes:
+  - _type: "OtelRelationMapping"
+    name: "OTel Synchronous Relation"
+    description: "Adds a synchronous connection to a service"
+    identifier: "urn:stackpack:open-telemetry:otel-relation-mapping:synchronous"
+    input:
+      signal:
+        - "METRICS"
+      resource:
+        scope:
+          condition: "scope.name == 'traces_service_graph'"
+          metric:
+            condition: "metric.name == 'traces_service_graph_request_total'"
+            datapoint:
+              action: "'CREATE'"
+              condition: >-
+                'client' in datapoint.attributes &&
+                'server' in datapoint.attributes &&
+                'client_service.namespace' in datapoint.attributes &&
+                'server_service.namespace' in datapoint.attributes &&
+                'connection_type' in datapoint.attributes &&
+                datapoint.attributes['connection_type'] == ''
+    vars:
+      - name: "clientServiceNamespace"
+        value: "datapoint.attributes['client_service.namespace']"
+      - name: "serverServiceNamespace"
+        value: "datapoint.attributes['server_service.namespace']"
+      - name: "client"
+        value: "datapoint.attributes['client']"
+      - name: "server"
+        value: "datapoint.attributes['server']"
+      - name: "clientServiceInstanceId"
+        value: >-
+          'client_service.instance.id' in datapoint.attributes ?
+          datapoint.attributes['client_service.instance.id'] :
+          datapoint.attributes['client']
+      - name: "serverServiceInstanceId"
+        value: >-
+          'server_service.instance.id' in datapoint.attributes ?
+          datapoint.attributes['server_service.instance.id'] :
+          datapoint.attributes['server']
+    output:
+      sourceId: >-
+        'urn:opentelemetry:namespace/' + vars.clientServiceNamespace + ':service/' + vars.client + ':serviceInstance/' + vars.clientServiceInstanceId
+      targetId: >-
+        'urn:opentelemetry:namespace/' + vars.serverServiceNamespace + ':service/' + vars.server + ':serviceInstance/' + vars.serverServiceInstanceId
+      typeName: "'synchronous'"
+      dependencyType: "'CONNECTION'"
+    expireAfter: 900000

@@ -1,0 +1,126 @@
+nodes:
+  - _type: "Monitor"
+    name: "OTel Collector - spans refused by a receiver"
+    tags:
+      - otel-collector
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:otel-collector-span-refused-receiver
+    arguments:
+      metric:
+        query: sum by (cluster_name, namespace, pod_name) (rate(stackstate_otelcol_receiver_refused_spans[1m]))
+        unit: "short"
+        aliasTemplate: "Number of spans that could not be pushed into the pipeline"
+      comparator: GT
+      threshold: 1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "OTel Collector - spans refused by a receiver"
+    intervalSeconds: 60
+    remediationHint: !include services/otel-collector/otel-collector-span-refused-receiver.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "OTel Collector - metric points refused by a receiver"
+    tags:
+      - otel-collector
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:otel-collector-metric-refused-receiver
+    arguments:
+      metric:
+        query: sum by (cluster_name, namespace, pod_name) (rate(stackstate_otelcol_receiver_refused_metric_points[1m]))
+        unit: "short"
+        aliasTemplate: "Number of metrics that could not be pushed into the pipeline"
+      comparator: GT
+      threshold: 1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "OTel Collector - metric points refused by a receiver"
+    intervalSeconds: 60
+    remediationHint: !include services/otel-collector/otel-collector-metric-refused-receiver.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "OTel Collector - spans export failures"
+    tags:
+      - otel-collector
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:otel-collector-span-export-failure
+    arguments:
+      metric:
+        query: sum by (cluster_name, namespace, pod_name) (rate(stackstate_otelcol_exporter_send_failed_spans[1m]))
+        unit: "short"
+        aliasTemplate: "Number of spans in failed attempts to send to destination"
+      comparator: GT
+      threshold: 1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "OTel Collector - spans export failures"
+    intervalSeconds: 60
+    remediationHint: !include services/otel-collector/otel-collector-span-export-failure.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "OTel Collector - metric points export failures"
+    tags:
+      - otel-collector
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:otel-collector-metric-export-failure
+    arguments:
+      metric:
+        query: sum by (cluster_name, namespace, pod_name) (rate(stackstate_otelcol_exporter_send_failed_metric_points[1m]))
+        unit: "short"
+        aliasTemplate: "Number of metric points in failed attempts to send to destination"
+      comparator: GT
+      threshold: 1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "OTel Collector - metric points export failures"
+    intervalSeconds: 60
+    remediationHint: !include services/otel-collector/otel-collector-metric-export-failure.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "OTel Collector - a processor drops spans"
+    tags:
+      - otel-collector
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:otel-collector-span-processor-drops
+    arguments:
+      metric:
+        query: sum by (cluster_name, namespace, pod_name) (rate(stackstate_otelcol_processor_dropped_spans[1m]))
+        unit: "short"
+        aliasTemplate: "Number of spans that were dropped"
+      comparator: GT
+      threshold: 1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "OTel Collector - a processor drops spans"
+    intervalSeconds: 60
+    remediationHint: !include services/otel-collector/otel-collector-span-processor-drops.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "OTel Collector - a processor drops metric points"
+    tags:
+      - otel-collector
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:otel-collector-metric-processor-drops
+    arguments:
+      metric:
+        query: sum by (cluster_name, namespace, pod_name) (rate(stackstate_otelcol_processor_dropped_metric_points[1m]))
+        unit: "short"
+        aliasTemplate: "Number of metric points that were dropped"
+      comparator: GT
+      threshold: 1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "OTel Collector - a processor drops metric points"
+    intervalSeconds: 60
+    remediationHint: !include services/otel-collector/otel-collector-metric-processor-drops.md.hbs
+    status: "ENABLED"

@@ -1,0 +1,22 @@
+nodes:
+  - _type: "Monitor"
+    name: "Health sync data processing latency"
+    tags:
+      - health-sync
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-health-sync-data-processing-latency
+    status: "ENABLED"
+    description: "Critical state when the processing latency is too high. The latency is measured from the time the data is received until it is stored as a health state."
+    arguments:
+      comparator: GT
+      failureState: "DEVIATING"
+      threshold: 30.0
+      metric:
+        query: |-
+          histogram_quantile(0.98, sum by (cluster_name, namespace, pod_name, le)(rate(stackstate_stackstate_health_sync_latency_seconds_bucket{}[5m])))
+        aliasTemplate: "Latency"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/health-sync/latency.md.hbs

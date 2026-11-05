@@ -1,0 +1,36 @@
+nodes:
+  - _type: "OtelRelationMapping"
+    name: "Executes Relation (Task)"
+    description: "Tasks executes a service instance"
+    identifier: "urn:stackpack:open-telemetry:otel-relation-mapping:executes-task"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'aws.ecs.task.id' in resource.attributes"
+    vars:
+      - name: "awsEcsTaskId"
+        value: "resource.attributes['aws.ecs.task.id']"
+      - name: "namespace"
+        value: >-
+          'service.namespace' in resource.attributes &&
+          resource.attributes['service.namespace'] != '' ?
+          resource.attributes['service.namespace'] :
+          'default'
+      - name: "service"
+        value: "resource.attributes['service.name']"
+      - name: "instanceId"
+        value: >-
+          'service.instance.id' in resource.attributes &&
+          resource.attributes['service.instance.id'] != '' ?
+          resource.attributes['service.instance.id'] :
+          resource.attributes['service.name']
+    output:
+      sourceId: "'urn:opentelemetry:task/' + vars.awsEcsTaskId"
+      targetId: >-
+        'urn:opentelemetry:namespace/' + vars.namespace + ':service/' + vars.service + ':serviceInstance/' + vars.instanceId
+      typeName: "'executes'"
+      dependencyType: "'UNCLASSIFIED'"
+    expireAfter: 900000

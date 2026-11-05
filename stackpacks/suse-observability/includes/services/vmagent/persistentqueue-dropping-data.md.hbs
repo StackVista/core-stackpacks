@@ -1,0 +1,29 @@
+Vmagent dropped data from persistent queue. Vmagent receives data and tries to push it to victoria metrics, the persistent queue helps as a buffer while writting to victoria metrics.
+
+### Troubleshooting steps
+1. Inspect the [Logs](/#/components/{{ componentUrnForUrl }}#logs) to verify if there's in issue while writing to victoria metrics.
+    1.1 Continue the troubleshooting process if you find errors in the logs by inspecting victoria metrics telemetry.
+2. If there are no issues regarding writing the problem could be related to a producer faster than what we can write to victoria metrics.
+    2a. Consider giving Victoria metrics more resources in the values.yaml. You can check the current settings on the victoria metrics pod's configuration.
+    ```
+        victoria-metrics-0:
+          resources:
+            requests:
+              cpu: 300m
+              memory: 3584Mi
+            limits:
+              memory: 4Gi
+              cpu: 1
+    ```
+
+       Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```
+
+    2b. Consider to limit the ingestion rate.

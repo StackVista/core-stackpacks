@@ -1,0 +1,43 @@
+nodes:
+  - _type: "Monitor"
+    name: "Correlate - Processing latency"
+    tags:
+      - correlate
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-pod-correlation-latency
+    status: "ENABLED"
+    description: "Critical state when the internal correlation latency is too high. The latency is measured from the time the data is received until a metric is produced."
+    arguments:
+      comparator: GT
+      failureState: "DEVIATING"
+      threshold: 300.0
+      metric:
+        query: |-
+          histogram_quantile(0.98, sum by (cluster_name, namespace, pod_name, le)(rate(stackstate_stackstate_correlate_received_data_latency_seconds_bucket{data_type="prometheus_earliest"}[5m])))
+        aliasTemplate: "Latency"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/correlate/latency.md.hbs
+  - _type: "Monitor"
+    name: "Correlate - Processing latency"
+    tags:
+      - correlate
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-correlation-deployment-latency
+    status: "ENABLED"
+    description: "Critical state when the internal correlation latency is too high. The latency is measured from the time the data is received until a metric is produced."
+    arguments:
+      comparator: GT
+      failureState: "DEVIATING"
+      threshold: 300.0
+      metric:
+        query: |-
+          histogram_quantile(0.98, sum by (cluster_name, namespace, deployment, le)(rate(stackstate_stackstate_correlate_received_data_latency_seconds_bucket{data_type="prometheus_earliest"}[5m])))
+        aliasTemplate: "Latency"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:deployment/${deployment}"
+    intervalSeconds: 30
+    remediationHint: !include services/correlate/latency.md.hbs

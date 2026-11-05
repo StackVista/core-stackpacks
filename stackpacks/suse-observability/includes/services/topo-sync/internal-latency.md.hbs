@@ -1,0 +1,56 @@
+The Topology Synchronization for `{{ labels.integration_type }}` has high latency.
+
+The Topology Synchronization pod consumes data sent by an agent and transforms them into topology elements.
+When the latency of the transformation process is high we might have components and/or relations missing in the topology.
+
+### Investigate
+Evaluate with the monitor metric chart if the deviation was caused by a burst of incoming data or if the load has consistently increased. If the high latency
+is present regularly you can consider:
+* Add more resources to the Topology Synchronization.
+* Reducing the frequency of topology updates for {{ labels.integration_type }}
+
+### Add more resources to the Topology Synchronization.
+1. Inspect the [Configuration](/#/components/{{ componentUrnForUrl }}#configuration) of this pod and look for the amount of requested CPU and memory. More CPU's translate into more
+parallel work achieved by the pod.
+```
+resources:
+  limits:
+    cpu: 1000m
+    ephemeral-storage: 1Mi
+    memory: 3Gi
+  requests:
+    cpu: 750m
+    ephemeral-storage: 1Mi
+    memory: 2Gi
+```
+
+* Verify with the memory, JVM heap, JVM Gc metric charts if the pod needs more memory.
+
+
+2. Update your helm `values.yaml` to add more cpu cores.
+```
+stackstate:
+  components:
+    sync:
+      resources:
+        limits:
+          memory: "4500Mi"
+          cpu: "3000m"
+        requests:
+          memory: "4500Mi"
+          cpu: "2000m"
+```
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```
+
+### Reduce the frequency of the topology updates.
+Update the settings of the agent collection of data for integration:  `{{ labels.integration_type }}`,
+Reducing the frequency of updates will remove pressure on the Topology Synchronization but as well means that the topology data will be less up-to-date as we don't refresh it that often.

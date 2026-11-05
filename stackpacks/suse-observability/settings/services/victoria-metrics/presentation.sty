@@ -1,0 +1,194 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Victoria Metrics"
+    description: "ComponentPresentation for SUSE Observability Victoria Metrics"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-victoria-metrics
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: |-
+        label IN ("app.kubernetes.io/name:victoria-metrics-0", "app.kubernetes.io/name:victoria-metrics-1")
+        AND type IN ("statefulset")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: backup
+                title: Backup
+                order: 90
+                metrics:
+                  - metricId: victoria-metrics-backup-duration
+              -
+                sectionId: performance
+                title: Performance
+                order: 100
+                metrics:
+                  - metricId: victoria-metrics-storage
+                  - metricId: victoria-metrics-churn-rate
+                  - metricId: victoria-metrics-timeseries-dropped
+                  - metricId: victoria-metrics-slow-inserts
+                  - metricId: victoria-metrics-slow-queries
+              -
+                sectionId: limits
+                title: Limits
+                order: 80
+                metrics:
+                  - metricId: victoria-metrics-labels-limit
+    metrics:
+      -
+        metricId: victoria-metrics-backup-duration
+        name: VictoriaMetrics - Backup duration
+        description: Duration of VictoriaMetrics backups
+        metricQueries:
+          - expression: |-
+              increase(stackstate_supercronic_cron_execution_time_seconds_sum{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name=~".*-victoria-metrics-.*"
+              }[${__rate_interval}]) > 0
+            alias: "${kube_app_name}"
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: victoria-metrics-churn-rate
+        name: VictoriaMetrics - Churn rate
+        description: "Shows the rate and total number of new series created over last 24h.\n\nHigh churn rate tightly connected with database performance and may result in unexpected OOM's or slow queries. It is recommended to always keep an eye on this metric to avoid unexpected cardinality \"explosions\".\n\nThe higher churn rate is, the more resources required to handle it. Consider to keep the churn rate as low as possible.\n\nGood references to read:\n* https://www.robustperception.io/cardinality-is-key\n* https://www.robustperception.io/using-tsdb-analyze-to-investigate-churn-and-cardinality"
+        metricQueries:
+          - expression: |-
+              sum(rate(stackstate_vm_new_timeseries_created_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name=~".*-victoria-metrics-.*"
+              }[${__rate_interval}]))
+            alias: "Time series created"
+          - expression: |-
+              sum(increase(stackstate_vm_new_timeseries_created_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name=~".*-victoria-metrics-.*"
+              }[24h]))
+            alias: "Time series created over 24 hrs"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: victoria-metrics-slow-inserts
+        name: VictoriaMetrics - Slow inserts
+        description: "The percentage of slow inserts comparing to total insertion rate during the last 5 minutes. 
+    The less value is better. If percentage remains high (>10%) during extended periods of time, then it is likely more RAM is needed for optimal handling of the current number of active time series. 
+    In general, VictoriaMetrics requires ~1KB or RAM per active time series, so it should be easy calculating the required amounts of RAM for the current workload according to capacity planning docs. But the resulting number may be far from the real number because the required amounts of memory depends on may other factors such as the number of labels per time series and the length of label values."
+        metricQueries:
+          - expression: |-
+              max(rate(stackstate_vm_slow_row_inserts_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+              }[${__rate_interval}]) / rate(stackstate_vm_rows_added_to_storage_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name=~".*-victoria-metrics-.*"
+              }[${__rate_interval}]))
+            alias: "Percentage of slow inserts"
+        chart:
+          _type: TimeSeriesChart
+          unit: percentunit
+      -
+        metricId: victoria-metrics-slow-queries
+        name: VictoriaMetrics - Slow queries rate
+        description: "Slow queries rate according to `search.logSlowQueryDuration` flag, which is `5s` by default."
+        metricQueries:
+          - expression: |-
+              sum(rate(stackstate_vm_slow_queries_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name=~".*-victoria-metrics-.*"
+              }[${__rate_interval}]))
+            alias: "Slow queries rate"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: victoria-metrics-labels-limit
+        name: VictoriaMetrics - Dropped timeseries
+        description: "VictoriaMetrics limits the number of labels per timeseries with `-maxLabelsPerTimeseries` command-line flag.
+    This prevents from ingesting metrics with too many labels. The value of `maxLabelsPerTimeseries` must be adjusted for your workload.
+    When limit is exceeded (graph is > 0) - the timeseries with too many labels are dropped, which results in missing metric data."
+        metricQueries:
+          - expression: |-
+              sum(increase(vm_rows_ignored_total{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name=~".*-victoria-metrics-.*"
+              }[${__rate_interval}]))
+            alias: "Slow queries rate"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: victoria-metrics-storage
+        name: Volume usage
+        description: "Percentage of persistent volume capacity used by VictoriaMetrics."
+        chart:
+          _type: GaugeChart
+          unit: percentunit
+          decimalPlaces: 0
+          max: 1
+          calculation: last
+          thresholds:
+            defaultColor: "#33A02C"
+            steps:
+              - color: "#E31A1C"
+                value: 0.9
+              - color: "#FF7F00"
+                value: 0.8
+            mode: absolute
+        metricQueries:
+          - expression: |-
+              max by (storage)(label_replace(max_over_time(kubernetes_kubelet_volume_stats_used_bytes{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                persistentvolumeclaim=~"server-volume-.*-(victoria-metrics-.+)"}[5m]
+              ) / max_over_time(kubernetes_kubelet_volume_stats_capacity_bytes{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                persistentvolumeclaim=~"server-volume-.*-(victoria-metrics-.+)"}[5m]
+              ), "storage","$1", "persistentvolumeclaim", "server-volume-.*-(victoria-metrics-.+)"))
+            alias: ${storage}
+      -
+        metricId: victoria-metrics-timeseries-dropped
+        name: Dropped timeseries in the past hour
+        description: >-
+          VictoriaMetrics limits the number of labels per timeseries with
+          `-maxLabelsPerTimeseries` command-line flag.
+          
+          This prevents from ingesting metrics with too many labels. The value
+          of `maxLabelsPerTimeseries` must be adjusted for your workload.
+          
+          When limit is exceeded (graph is > 0) - the timeseries with too many
+          labels are dropped, which results in missing metric data.
+        metricQueries:
+          - expression: |-
+              sum by (statefulset)(increase(stackstate_vm_rows_ignored_total{
+                pod_name=~".*-victoria-metrics-.*",
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}"
+              }[1h]))
+            alias: VictoriaMetrics
+        chart:
+          _type: StatChart
+          unit: short
+          decimals: 0
+          calculation: last
+          sparkline: true
+          thresholds:
+            defaultColor: "#33A02C"
+            steps:
+              - color: "#E31A1C"
+                value: 10

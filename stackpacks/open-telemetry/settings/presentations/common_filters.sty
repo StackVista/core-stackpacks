@@ -1,0 +1,44 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Otel common columns"
+    description: "ComponentPresentation common for Otel components"
+    identifier: urn:stackpack:open-telemetry:component-presentation:common_filters
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("stackpack:open-telemetry")
+    rank:
+      specificity: 2
+    presentation:
+      filters:
+        - filterId: "otel_namespace"
+          displayName:
+            singular: "OTEL namespace"
+            plural: "OTEL namespaces"
+          filter:
+            _type: "TagFilter"
+            tagKey: "service.namespace"
+          moreTab: Otel
+        - filterId: "otel_service"
+          displayName:
+            singular: "OTEL service"
+            plural: "OTEL services"
+          filter:
+            _type: "TagFilter"
+            tagKey: "service.name"
+          moreTab: Otel
+        - filterId: "k8s_namespace"
+          displayName:
+            singular: "K8s namespace"
+            plural: "K8s namespaces"
+          filter:
+            _type: "TagFilter"
+            tagKey: "namespace"
+          moreTab: K8s
+        - filterId: "k8s_cluster"
+          displayName:
+            singular: "K8s cluster"
+            plural: "K8s clusters"
+          filter:
+            _type: "TagFilter"
+            tagKey: "cluster-name"
+          moreTab: K8s

@@ -1,0 +1,17 @@
+name: "otel-k8s-crd"
+version: "0.0.9"
+schemaVersion: "2.0"
+displayName: "Kubernetes Custom Resources"
+categories: [ "Kubernetes" ]
+logoUrl: !resource "logo.svg"
+overviewUrl: !resource "overview.md"
+detailedOverviewUrl: !resource "detailed-overview.md"
+configurationUrls:
+  NOT_INSTALLED: !resource "configuration.md"
+  PROVISIONING: !resource "provisioning.md"
+  WAITING_FOR_DATA: !resource "waitingfordata.md"
+  INSTALLED: !resource "enabled.md"
+  DEPROVISIONING: !resource "configuration.md"
+  ERROR: !resource "error.md"
+provision:
+  companionStackPacks: []

@@ -1,0 +1,4 @@
+ClickHouse increase ReadBufferFromFileDescriptorReadFailed or ReadBufferFromFileDescriptorReadFailed in `system.events` table.
+It mean the read (read/pread) or writes (write/pwrite) to a file descriptor. Does not include sockets.
+System can't read or write to some files.
+Please check [logs](/#/components/{{ componentUrnForUrl }}#logs) of the pod.

@@ -1,0 +1,9 @@
+This monitor takes longer on average to evaluate than a one minute interval, so runs cannot reliably complete before the next one is due, and results arrive late or are skipped.
+
+Check:
+
+- the monitor's own query - long ranges over many series are the usual cause
+- `Select concurrency saturated` on VictoriaMetrics, since a saturated query path slows every monitor at once
+- whether the `checks` pod (or `server`, in non-HA) is CPU starved, on the *Metrics processing* dashboard
+
+Either simplify the query or lengthen the monitor's interval so it matches how long it actually takes.

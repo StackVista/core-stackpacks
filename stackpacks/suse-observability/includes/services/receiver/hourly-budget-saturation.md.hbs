@@ -1,0 +1,31 @@
+Element budget **nearly saturated for `{{ labels.element_type }}`**, has high element hourly budget saturation level. When the budget is saturated data starts being dropped which translates in missing topology or metrics.
+
+### Increase the budget of elements allowed
+1. We can control the budget by setting extra environment variables for the receiver pod.
+Here are the default settings:
+```
+    receiver:
+      extraEnv:
+        open:
+          CONFIG_FORCE_stackstate_receiver_processAgent_maxNewComponentsHourly: "2000"
+          CONFIG_FORCE_stackstate_receiver_processAgent_maxNewRelationsHourly: "5000"
+```
+
+2. Identify which budget got saturated and increment the right environment variable to allow more elements to be passed:
+
+| element type | environment variable                                         |
+|--------------|--------------------------------------------------------------|
+| component    | CONFIG_FORCE_stackstate_receiver_processAgent_maxNewComponentsHourly  |
+| relation     | CONFIG_FORCE_stackstate_receiver_processAgent_maxNewRelationsHourly   |
+
+Keep in mind that allowing more elements to be processed will have an impact on downstream services such as the Correlator and the Topology Sync.
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```

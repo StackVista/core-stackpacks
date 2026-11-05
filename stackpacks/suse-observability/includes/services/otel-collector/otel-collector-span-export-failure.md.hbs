@@ -1,0 +1,17 @@
+`stackstate_otelcol_exporter_send_failed_spans` metric in your OpenTelemetry collector indicates that spans are failing
+to be sent to the receiving backend.
+
+Potential Reasons:
+- Network Issues:
+  - **Connectivity**: Verify that the collector can connect to the receiving backend/database. You can use tools like ping or network diagnostics to check connectivity.
+  - **Firewall Rules**: Ensure firewall rules do not block communication between the collector and the backend. Adjust rules as needed.
+  - **DNS Resolution**: Check if the collector can resolve the hostname of the backend correctly.
+- Backend Overload:
+  - **Monitor Backend Resources**: Check the resource usage (CPU, memory) of the receiving backend (open Metrics of the receiver component(s)). If overloaded, consider scaling it up.
+  - **Backend Configuration**: Ensure the backend is configured to accept spans from the collector correctly. Refer to the backend's documentation for specific configuration details.
+- Collector Configuration:
+  - **Exporter Configuration**: Double-check your exporter configuration for typos, incorrect endpoint URLs, or invalid authentication credentials.
+  - **Batch Size and Interval**: Adjust batch size and sending interval settings in your exporter configuration to manage data flow better. Smaller batches and shorter intervals might help with overloaded backends.
+  - **Queue Management**: Monitor metrics like `stackstate_otelcol_exporter_queue_size` and `stackstate_otelcol_exporter_queue_capacity`. If the queue is often full, consider increasing its capacity or adjusting batch sizes/intervals.
+
+You may find more details by checking [logs](/#/components/{{ componentUrnForUrl }}#logs).

@@ -1,0 +1,34 @@
+High rate of slow inserts may be a sign of resource exhaustion for the current load. It is likely more RAM is needed for optimal handling of the current number of active time series.
+
+### Troubleshooting steps
+1. Inspect the [Configuration](/#/components/{{ componentUrnForUrl }}#configuration) of this pod and look for the amount of memory.
+```
+resources:
+  limits:
+    cpu: 1000m
+    memory: 3Gi
+  requests:
+    cpu: 750m
+    memory: 2Gi
+```
+Please verify that `-maxLabelsPerTimeseries` is configured correctly or that clients which send these metrics aren't misbehaving.
+
+2. Update your helm `values.yaml` to add more memory
+```
+  victoria-metrics-0:
+    resources:
+      limits:
+        memory: "4500Mi"
+      requests:
+        memory: "4500Mi"
+```
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```

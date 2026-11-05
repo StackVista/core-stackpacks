@@ -1,0 +1,61 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Otel component"
+    description: "ComponentPresentation for Otel components"
+    identifier: urn:stackpack:open-telemetry:component-presentation:component
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("stackpack:open-telemetry")
+    rank:
+      specificity: 2
+    presentation:
+      overview:
+        name:
+          singular: "otel component"
+          plural: "otel components"
+          title: "Otel component"
+        columns:
+          - columnId: "health"
+            title: "Health"
+            projection:
+              _type: "HealthProjection"
+              value: "healthState"
+          - columnId: "otel_name"
+            title: "Otel component"
+            projection:
+              _type: "ComponentLinkProjection"
+              name: "name"
+              identifier: "identifiers[0]"
+          - columnId: "otel_namespace"
+            title: "Namespace"
+            projection:
+              _type: "ComponentLinkProjection"
+              name: "tags.singleValue('service.namespace')"
+              identifier: "'urn:opentelemetry:namespace/' + tags.singleValue('service.namespace')"
+          - columnId: otel_sdk_language
+            title: "Language"
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('telemetry.sdk.language')"
+      highlight:
+        title: "Otel Component"
+        fields:
+          - fieldId: "type"
+            title: "Type"
+            order: 100.0
+            projection:
+              _type: "TextProjection"
+              value: "typeName"
+          - fieldId: "health"
+            title: "Health"
+            order: 90.0
+            projection:
+              _type: "HealthProjection"
+              value: "healthState"
+          - fieldId: "labels"
+            title: "Labels"
+            order: 80.0
+            projection:
+              _type: "TagProjection"
+        events:
+          showEvents: true

@@ -1,0 +1,36 @@
+nodes:
+  - _type: "OtelRelationMapping"
+    name: "Executes Relation (Function)"
+    description: "Functions executes a service instance"
+    identifier: "urn:stackpack:open-telemetry:otel-relation-mapping:executes-function"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'faas.id' in resource.attributes"
+    vars:
+      - name: "faasId"
+        value: "resource.attributes['faas.id']"
+      - name: "namespace"
+        value: >-
+          'service.namespace' in resource.attributes &&
+          resource.attributes['service.namespace'] != '' ?
+          resource.attributes['service.namespace'] :
+          'default'
+      - name: "service"
+        value: "resource.attributes['service.name']"
+      - name: "instanceId"
+        value: >-
+          'service.instance.id' in resource.attributes &&
+          resource.attributes['service.instance.id'] != '' ?
+          resource.attributes['service.instance.id'] :
+          resource.attributes['service.name']
+    output:
+      sourceId: "'urn:opentelemetry:function/' + vars.faasId"
+      targetId: >-
+        'urn:opentelemetry:namespace/' + vars.namespace + ':service/' + vars.service + ':serviceInstance/' + vars.instanceId
+      typeName: "'executes'"
+      dependencyType: "'UNCLASSIFIED'"
+    expireAfter: 900000

@@ -1,0 +1,62 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Otel Service Namespaces presentation"
+    description: "ComponentPresentation for Otel Service Namespaces"
+    identifier: urn:stackpack:open-telemetry:component-presentation:service-namespace
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: (label IN ("stackpack:open-telemetry") AND type IN ("service namespace (otel)"))
+    rank:
+      specificity: 10
+    presentation:
+      icon: !icon service-namespaces.svg
+      filters:
+        - filterId: "k8s_cluster"
+        - filterId: "k8s_namespace"
+      topology:
+        groupingEnabled: true
+        showIndirectRelations: false
+        minimumGroupSize: 8
+        groupedByLayers: false
+        groupedByDomains: true
+        autoGrouping: true
+        connectedComponents: true
+      overview:
+        name:
+          singular: "service namespace"
+          plural: "service namespaces"
+          title: "Service Namespaces"
+        mainMenu:
+          group: "Open Telemetry"
+          order: 97
+        columns:
+          - columnId: health
+          - columnId: "otel_name"
+            title: "Namespace"
+        provisioning:
+          topologySourceSelector: "source.mapping.identifier == 'urn:stackpack:open-telemetry:otel-component-mapping:namespace'"
+          showConfiguration: false
+          showStatus: false
+        sort:
+          - columnId: health
+          - columnId: otel_name
+      highlight:
+        title: "Otel namespace"
+        fields: []
+        relatedResources:
+          - resourceId: "otel_namespace_service_instances"
+            title: "Service instances"
+            order: 1.0
+            topologyQuery: 'type = "otel service instance" AND label in ("service.namespace:${name}")'
+            presentationIdentifier: "urn:stackpack:open-telemetry:component-presentation:service-instance"
+          - resourceId: "otel_namespace_services"
+            title: "Services"
+            order: 2.0
+            topologyQuery: 'type = "otel service" AND label in ("service.namespace:${name}")'
+            presentationIdentifier: "urn:stackpack:open-telemetry:component-presentation:service"
+        events:
+          showEvents: true
+          relatedResourcesQuery: |
+            type IN ("otel service", "otel service instance") AND label IN ("service.namespace:${name}")
+              OR 
+            identifier = "${identifiers[0]}"

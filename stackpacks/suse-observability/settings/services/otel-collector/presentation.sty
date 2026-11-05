@@ -1,0 +1,240 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability OTel Collector"
+    description: "ComponentPresentation for SUSE Observability OTel Collector"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-otel-collector-pod
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:opentelemetry-collector") and type = "pod"
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: otel-collector
+                title: OTel Collector
+                order: 100
+                metrics:
+                  - metricId: otel-collector-accepted-metrics
+                  - metricId: otel-collector-accepted-spans
+              -
+                sectionId: topology-connector
+                title: Topology connector
+                order: 90
+                metrics:
+                  - metricId: otel-collector-connector-topology-topology-produced
+                  - metricId: otel-collector-connector-topology-mappings-removed
+                  - metricId: otel-collector-connector-topology-mapping-errors
+                  - metricId: otel-collector-connector-topology-mapping-duration
+                  - metricId: otel-collector-connector-topology-signal-processing-duration
+              -
+                sectionId: settings-provider-extension
+                title: Settings provider extension
+                order: 80
+                metrics:
+                  - metricId: otel-collector-extension-incomplete-snapshots
+                  - metricId: otel-collector-extension-successful-snapshot-ends
+                  - metricId: otel-collector-extension-settings-count
+                  - metricId: otel-collector-extension-settings-size
+    metrics:
+      -
+        metricId: otel-collector-accepted-metrics
+        description: 'Number of metric points successfully pushed into the pipeline'
+        name: OTel Collector - accepted metric points
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name, le)(increase(stackstate_otelcol_receiver_accepted_metric_points{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+              }[${__rate_interval}]))
+            alias: Metric points
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: otel-collector-accepted-spans
+        description: 'Number of spans successfully pushed into the pipeline'
+        name: OTel Collector - accepted spans
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name, le)(increase(stackstate_otelcol_receiver_accepted_spans{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+              }[${__rate_interval}]))
+            alias: Spans
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: otel-collector-connector-topology-topology-produced
+        description: 'Total number of topology produced by the topology mapping connector'
+        name: OTel topology connector - components produced
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name, type, signal)(
+                rate(stackstate_otelcol_connector_topology_topology_produced_total{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__rate_interval}])
+              )
+            alias: Components produced
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: otel-collector-connector-topology-mappings-removed
+        description: 'Total number of mappings removed by the topology mapping connector'
+        name: OTel topology connector - mappings removed
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name, type)(
+                rate(stackstate_otelcol_connector_topology_mappings_removed_total{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__rate_interval}])
+              )
+            alias: Components produced
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: otel-collector-connector-topology-mapping-errors
+        description: 'Number of mapping errors observed by the topology connector'
+        name: OTel topology connector - mapping errors
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name, type, signal)(
+                rate(stackstate_otelcol_connector_topology_mapping_errors_total{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__rate_interval}])
+              )
+            alias: Mapping errors
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: otel-collector-connector-topology-mapping-duration
+        description: '95th percentile of mapping input to topology duration in seconds'
+        name: OTel topology connector - input mapping duration (p95)
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.95,
+                sum by (le, cluster_name, namespace, pod_name, signal)(
+                  rate(stackstate_otelcol_connector_topology_mapping_duration_seconds_bucket{
+                    cluster_name="${tags.singleValue('cluster-name')}",
+                    namespace="${tags.singleValue('namespace')}",
+                    pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                  }[${__rate_interval}])
+                )
+              )
+            alias: P95 Mapping duration
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: otel-collector-connector-topology-signal-processing-duration
+        description: '95th percentile of processing a single input signal request in seconds'
+        name: OTel topology connector - single input signal processing duration (p95)
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.95,
+                sum by (le, cluster_name, namespace, pod_name, signal)(
+                  rate(stackstate_otelcol_connector_topology_mapping_duration_seconds_bucket{
+                    cluster_name="${tags.singleValue('cluster-name')}",
+                    namespace="${tags.singleValue('namespace')}",
+                    pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                  }[${__rate_interval}])
+                )
+              )
+            alias: P95 Mapping duration
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: otel-collector-extension-incomplete-snapshots
+        description: 'Total number of incomplete setting snapshots (replaced by new snapshot starts messages)'
+        name: OTel settings provider extension - incomplete snapshots
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name)(
+                rate(stackstate_otelcol_extension_sts_settings_provider_settings_snapshot_incomplete{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__rate_interval}])
+              )
+            alias: Incomplete snapshots
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: otel-collector-extension-successful-snapshot-ends
+        description: 'Total number of setting snapshots processed completely'
+        name: OTel settings provider extension - successful snapshots
+        metricQueries:
+          - expression: |-
+              sum by (cluster_name, namespace, pod_name)(
+                rate(stackstate_otelcol_extension_sts_settings_provider_settings_snapshot_complete{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__rate_interval}])
+              )
+            alias: Successful snapshots
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: otel-collector-extension-settings-count
+        description: 'Settings count per snapshot by type'
+        name: OTel settings provider extension - settings count
+        metricQueries:
+          - expression: |
+              sum by (cluster_name, namespace, pod_name, setting_type)(
+                rate(stackstate_otelcol_extension_sts_settings_provider_settings_count_by_type_sum{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__rate_interval}])
+              )
+            alias: Settings count by type
+        chart:
+          _type: TimeSeriesChart
+          unit: settings
+      -
+        metricId: otel-collector-extension-settings-size
+        description: 'Maximum average size of completed settings snapshots (in bytes)'
+        name: OTel settings provider extension - settings size
+        metricQueries:
+          - expression: |
+              sum by (cluster_name, namespace, setting_type)(
+                max_over_time(stackstate_otelcol_extension_sts_settings_provider_settings_size_by_type_bytes_sum{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__interval}])
+              )
+              /
+              sum by (cluster_name, namespace, setting_type)(
+                max_over_time(stackstate_otelcol_extension_sts_settings_provider_settings_size_by_type_bytes_count{
+                  cluster_name="${tags.singleValue('cluster-name')}",
+                  namespace="${tags.singleValue('namespace')}",
+                  pod_name="${tags.singleValue('statefulset.kubernetes.io/pod-name')}"
+                }[${__interval}])
+              )
+            alias: Max average snapshot size (bytes)
+        chart:
+          _type: TimeSeriesChart
+          unit: By

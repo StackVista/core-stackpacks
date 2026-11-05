@@ -1,0 +1,34 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Task Component"
+    description: "Represents an ECS task"
+    identifier: "urn:stackpack:open-telemetry:otel-component-mapping:task"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'aws.ecs.task.id' in resource.attributes"
+    vars:
+      - name: "awsEcsTaskId"
+        value: "resource.attributes['aws.ecs.task.id']"
+    output:
+      identifier: "'urn:opentelemetry:task/' + vars.awsEcsTaskId"
+      name: "vars.awsEcsTaskId"
+      typeName: "'task'"
+      required:
+        tags:
+          - source: "'open-telemetry'"
+            target: "stackpack"
+      optional:
+        tags:
+          - source: "resource.attributes"
+            pattern: "^aws.ecs\\.(.*)"
+            target: "ecs.${1}"
+          - source: "resource.attributes"
+            pattern: "^cloud\\.(.*)"
+            target: "cloud.${1}"
+    expireAfter: 900000
+    rank:
+      specificity: 110

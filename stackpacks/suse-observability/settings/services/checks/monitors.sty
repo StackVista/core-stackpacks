@@ -1,0 +1,50 @@
+nodes:
+  - _type: "Monitor"
+    name: "Failure percentage"
+    tags:
+      - monitors
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:monitors-failure-percentage-pod
+    arguments:
+      metric:
+        query: |-
+          (
+            (sum by(cluster_name, namespace, pod_name, monitorName) (changes(stackstate_stackstate_monitor_last_run_timestamp{monitorResult="FAILURE"}[10m]))
+             / (sum by(cluster_name, namespace, pod_name, monitorName) (changes(stackstate_stackstate_monitor_last_run_timestamp{}[10m]))))
+            and (sum by(cluster_name, namespace, pod_name, monitorName) (changes(stackstate_stackstate_monitor_last_run_timestamp{}[10m]) > 5))
+          )
+        unit: "percentunit"
+        aliasTemplate: "Failed run %"
+      comparator: GT
+      threshold: 0.3
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Monitor ${monitorName} execution"
+    intervalSeconds: 30
+    remediationHint: !include services/checks/monitors-failure-percentage-pod.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "Monitor execution time"
+    description: "Monitor that triggers when a monitor takes so long to evaluate that it cannot keep up with a one minute interval"
+    tags:
+      - monitors
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:monitors-execution-time-pod
+    arguments:
+      metric:
+        query: |-
+          sum by(cluster_name, namespace, pod_name, monitorName) (rate(stackstate_stackstate_monitor_latency_seconds_sum[10m]))
+          / sum by(cluster_name, namespace, pod_name, monitorName) (rate(stackstate_stackstate_monitor_latency_seconds_count[10m]))
+        unit: "s"
+        aliasTemplate: "Mean run duration"
+      comparator: GT
+      threshold: 60
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Monitor ${monitorName} execution time"
+    intervalSeconds: 60
+    remediationHint: !include services/checks/monitors-execution-time-pod.md.hbs
+    status: "ENABLED"

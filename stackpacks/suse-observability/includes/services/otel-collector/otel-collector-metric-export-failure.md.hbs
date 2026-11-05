@@ -1,0 +1,17 @@
+`stackstate_otelcol_exporter_send_failed_metric_points` metric in your OpenTelemetry collector indicates that metric points
+are failing to be sent to the receiving endpoint (e.g., Prometheus server, Victoria Metrics).
+
+Potential Reasons:
+- Network Issues:
+  - **Connectivity**: Verify the collector's ability to connect to the receiving endpoint. Use tools like ping or network diagnostics to confirm connectivity.
+  - **Firewall Rules**: Ensure firewall rules don't block communication between the collector and the endpoint. Adjust rules as necessary.
+  - **DNS Resolution**: Check if the collector can resolve the hostname of the endpoint correctly.
+- Receiving Endpoint Overload:
+  - **Monitor Resources**: Track resource usage (CPU, memory) of the receiving endpoint (open Metrics of the receiver component(s)). If overloaded, consider scaling it up.
+  - **Endpoint Configuration**: Ensure the endpoint is configured to accept metrics from the collector correctly. Refer to the endpoint's documentation for specific configuration details.
+- Collector Configuration:
+  - **Exporter Configuration**: Double-check your exporter configuration for typos, incorrect endpoint URLs, or invalid authentication credentials.
+  - **Batch Size and Interval**: Adjust batch size and sending interval settings in your exporter configuration to manage data flow better. Smaller batches and shorter intervals might help with overloaded endpoints.
+  - **Queue Management**: Monitor metrics like `stackstate_otelcol_exporter_queue_size` and `stackstate_otelcol_exporter_queue_capacity`. If the queue is often full, consider increasing its capacity or adjusting batch sizes/intervals.
+
+You may find more details by checking [logs](/#/components/{{ componentUrnForUrl }}#logs).

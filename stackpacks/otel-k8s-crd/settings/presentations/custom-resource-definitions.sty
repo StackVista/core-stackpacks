@@ -1,0 +1,114 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Custom Resource Definition"
+    description: "Presentation for Kubernetes Custom Resource Definitions"
+    identifier: "urn:stackpack:otel-k8s-crd:component-presentation:custom-resource-definition"
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: (label = "stackpack:otel-k8s-crd" and label = "source-type:custom resource definition")
+    rank:
+      specificity: 10
+    presentation:
+      icon: !icon crd.svg
+      filters:
+        - filterId: "crd_cluster"
+        - filterId: "crd_api_group"
+        - filterId: "crd_kind"
+        - filterId: "crd_custom_resources_watched"
+      overview:
+        name:
+          singular: "custom resource definition"
+          plural: "custom resource definitions"
+          title: "Custom Resource Definitions"
+        mainMenu:
+          group: "Kubernetes"
+          order: 0
+        columns:
+          - columnId: crd_name
+            title: "Name"
+            projection:
+              _type: "ComponentLinkProjection"
+              name: "name"
+              identifier: "identifiers[0]"
+          - columnId: crd_crs_collected
+            title: "CRs collected"
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('k8s.crd.custom_resources_watched')"
+          - columnId: crd_api_group
+            title: "API Group"
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('k8s.crd.group')"
+          - columnId: crd_kind
+            title: "Kind"
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('k8s.crd.kind')"
+          - columnId: crd_cluster
+            title: "Cluster"
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('cluster-name')"
+          - columnId: crd_age
+            title: "Age"
+            projection:
+              _type: "DurationProjection"
+              startTime: "tags.singleValue('k8s.creationTimestamp')"
+      highlight:
+        title: "Custom Resource Definition"
+        fields:
+          - fieldId: "type"
+            title: "Type"
+            order: 100.0
+            projection:
+              _type: "TextProjection"
+              value: "typeName"
+          - fieldId: "api_group"
+            title: "API Group"
+            order: 90.0
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('k8s.crd.group')"
+          - fieldId: "kind"
+            title: "Kind"
+            order: 80.0
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('k8s.crd.kind')"
+          - fieldId: "cluster"
+            title: "Cluster"
+            order: 70.0
+            projection:
+              _type: "TextProjection"
+              value: "tags.singleValue('cluster-name')"
+          - fieldId: "age"
+            title: "Age"
+            order: 60.0
+            projection:
+              _type: "DurationProjection"
+              startTime: "tags.singleValue('k8s.creationTimestamp')"
+          - fieldId: "labels"
+            title: "Labels"
+            order: 10.0
+            projection:
+              _type: "TagProjection"
+        provisioning:
+          topologySourceSelector: "source.identifier == identifiers[0]"
+          showConfiguration: true
+          showStatus: true
+        relatedResources:
+          - resourceId: "crd_instances"
+            title: "Custom Resource instances"
+            order: 1.0
+            topologyQuery: >-
+              (withNeighborsOf(direction = "both",
+                components = (identifier = "${identifiers[0]}"),
+                levels = "1")) and label = "source-type:custom resource"
+            presentationIdentifier: "urn:stackpack:otel-k8s-crd:component-presentation:custom-resource"
+        events:
+          showEvents: true
+          relatedResourcesQuery: |
+            identifier = "${identifiers[0]}"
+              OR
+            (withNeighborsOf(direction = "both", components = (identifier = "${identifiers[0]}"), levels = "1") and label = "source-type:custom resource")

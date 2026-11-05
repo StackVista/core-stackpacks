@@ -1,0 +1,20 @@
+name: "open-telemetry"
+version: "0.1.5"
+schemaVersion: "2.0"
+displayName: "Open Telemetry"
+categories: [ "Open Telemetry" ]
+logoUrl: !resource "logo.png"
+# information that will go in the overview section
+overviewUrl: !resource "overview.md"
+# information that will go to the detailed-overview section
+detailedOverviewUrl: !resource "detailed-overview.md"
+# information that will go in the configuration section
+configurationUrls:
+  NOT_INSTALLED: !resource "configuration.md"
+  PROVISIONING: !resource "provisioning.md"
+  WAITING_FOR_DATA: !resource "waitingfordata.md"
+  INSTALLED: !resource "enabled.md"
+  DEPROVISIONING: !resource "configuration.md"
+  ERROR: !resource "configuration.md"
+provision:
+  companionStackPacks: []

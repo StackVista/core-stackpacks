@@ -1,0 +1,22 @@
+GC collection times have been excessive for `{{ tags.pod_name }}`. This means that the CPU has not been able to do any kind of work but GC during those pauses.
+
+### Mitigation
+1. Inspect the [Configuration](/#/components/{{ componentUrnForUrl }}#configuration) of this pod and look for the amount of requested Memory.
+2. Based on the pod locate the relevant section of the `values.yaml` and increase the Memory requests to give more resources, for example if the pod with the issue if kafka then we would need to update
+
+```
+kafka:
+  resources:
+    requests:
+      memory: 3Gi
+```
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```

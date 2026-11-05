@@ -1,0 +1,30 @@
+nodes:
+  - _type: "OtelRelationMapping"
+    name: "Custom Resource instance of CRD"
+    description: "Links a Custom Resource to the Custom Resource Definition it is an instance of"
+    identifier: "urn:stackpack:otel-k8s-crd:otel-relation-mapping:cr-instance-of-crd"
+    input:
+      signal:
+        - "LOGS"
+      resource:
+        scope:
+          log:
+            action: "log.body['type'] in ['ADDED', 'MODIFIED'] ? 'CREATE' : log.body['type'] == 'DELETED' ? 'DELETE' : 'CONTINUE'"
+            condition: log.eventName == 'KubernetesCustomResourceEvent'
+    vars:
+      - name: "clusterName"
+        value: "resource.attributes['k8s.cluster.name']"
+      - name: "kind"
+        value: "log.attributes['k8s.resource.kind']"
+      - name: "group"
+        value: "log.attributes['k8s.resource.group']"
+      - name: "name"
+        value: "log.attributes['k8s.object.name']"
+      - name: "namespace"
+        value: "'k8s.namespace.name' in log.attributes ? log.attributes['k8s.namespace.name'] : ''"
+    output:
+      sourceId: "'urn:k8s:cr:/cluster/' + vars.clusterName + ':namespace/' + vars.namespace + ':group/' + vars.group + ':kind/' + vars.kind + ':name/' + vars.name"
+      targetId: "'urn:k8s:crd:/cluster/' + vars.clusterName + ':group/' + vars.group + ':kind/' + vars.kind"
+      typeName: "'instance of'"
+      dependencyType: "'UNCLASSIFIED'"
+    expireAfter: 900000

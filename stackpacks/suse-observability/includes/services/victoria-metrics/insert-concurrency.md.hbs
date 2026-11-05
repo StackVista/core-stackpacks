@@ -1,0 +1,5 @@
+Concurrent inserts are at the limit VictoriaMetrics derives from the CPU it detects, so new writes queue behind in-flight ones. Sustained saturation shows up downstream as vmagent queueing and then as lost data.
+
+Check `stackstate_vm_concurrent_insert_limit_reached_total` to confirm writes are actually being held, and the `CPU Usage VictoriaMetrics` and `CPU Pressure` panels to see whether the pod is CPU starved.
+
+The limit scales with available CPU, so raising the CPU request or limit raises it. Reducing ingestion rate or series churn lowers demand for it.

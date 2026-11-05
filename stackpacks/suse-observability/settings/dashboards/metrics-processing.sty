@@ -1,0 +1,755 @@
+nodes:
+  - _type: Dashboard
+    identifier: urn:stackpack:suse-observability:dashboard:metrics-processing
+    name: SUSE Observability - Metrics processing
+    description: ""
+    dashboard:
+      metadata:
+        project: '{"saveVariables":false}'
+      spec:
+        panels:
+          eIFw6RjqVknqJoWc309aa:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percentunit
+                      decimalPlaces: 2
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps:
+                      - color: "#E31A1C"
+                        value: 0.02
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(rate(stackstate_vm_slow_row_inserts_total{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-victoria-metrics-.*"}[${__rate_interval}]))
+                          / sum by
+                          (pod_name)(rate(stackstate_vm_rows_added_to_storage_total{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-victoria-metrics-.*"}[${__rate_interval}]))
+                        alias: ${pod_name}
+              display:
+                name: VictoriaMetrics - Slow inserts
+                description: "Percentage of inserts into VictoriaMetrics that are considered slow."
+          6RpPvPOqS5SdnjYcbMZtB:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(rate(stackstate_vm_slow_queries_total{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-victoria-metrics-.*"}[${__rate_interval}]))
+                        alias: ${pod_name}
+              display:
+                name: VictoriaMetrics - Slow queries rate
+                description: "Rate of slow queries executed against VictoriaMetrics."
+          b2OMg07XzmxsM0C6TiFoP:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(increase(stackstate_vm_new_timeseries_created_total{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-victoria-metrics-.*"}[24h]))
+                        alias: ${pod_name} over 24 hrs
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(rate(stackstate_vm_new_timeseries_created_total{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-victoria-metrics-.*"}[${__rate_interval}]))
+                        alias: ${pod_name} / second
+              display:
+                name: VictoriaMetrics - Churn rate
+                description: "Rate of new time series creation in VictoriaMetrics."
+          tSVthJSBDQ55Ag0zWATTh:
+            spec:
+              plugin:
+                kind: StatChart
+                spec:
+                  calculation: last
+                  format:
+                    unit: short
+                    decimalPlaces: 0
+                  sparkline: true
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 10
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (statefulset)(increase(stackstate_vm_rows_ignored_total{pod_name=~"suse-observability-vmagent-.*",
+                          cluster_name="${cluster}", namespace="${namespace}"}[1h]))
+                        alias: vmagent
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (statefulset)(increase(stackstate_vm_rows_ignored_total{pod_name=~"suse-observability-victoria-metrics-.*",
+                          cluster_name="${cluster}", namespace="${namespace}"}[1h]))
+                        alias: VictoriaMetrics
+              display:
+                name: Dropped timeseries in the past hour
+                description: >-
+                  VictoriaMetrics limits the number of labels per timeseries with
+                  `-maxLabelsPerTimeseries` command-line flag.
+
+                  This prevents from ingesting metrics with too many labels. The value
+                  of `maxLabelsPerTimeseries` must be adjusted for your workload.
+
+                  When limit is exceeded (graph is > 0) - the timeseries with too many
+                  labels are dropped, which results in missing metric data.
+          H5gtvG8QRQgcH2_9kvYLJ:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percent
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: 100 * sum by (container)
+                          (container_cpu_throttled_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_instance="suse-observability", container=~"receiver|receiver-base|vmagent|opentelemetry-collector|victoria-metrics-\\d-server"})
+                          / (sum by (container)
+                          (container_cpu_elapsed_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_instance="suse-observability", container=~"receiver|receiver-base|vmagent|opentelemetry-collector|victoria-metrics-\\d-server"})
+                          > 0)
+                        alias: ${container}
+              display:
+                name: CPU Throttling
+                description: CPU throttling for the main pods in the data ingestion pipeline.
+                  High throttling can lead to delays in data processing, a profile
+                  upgrade or CPU limit increase can resolve the problem. A container
+                  with no CPU limit is never throttled and reports nothing here, so
+                  read this alongside CPU Pressure.
+          1LYJbBBKSUMFsD1dbNDvi:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 2
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (cluster_name, namespace, pod_name,
+                          kube_app_component)(max_over_time(container_cpu_usage{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_component=~"receiver|receiver-base|vmagent"}[${__interval}]))
+                          / 1000000000
+                        alias: ${kube_app_component}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (cluster_name, namespace,
+                          kube_app_name)(max_over_time(container_cpu_usage{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name="opentelemetry-collector"}[${__interval}])) /
+                          1000000000
+                        alias: ${kube_app_name}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (container)(kubernetes_state_container_cpu_requested{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_instance="suse-observability", container=~"receiver|receiver-base|vmagent|opentelemetry-collector"})
+                        alias: ${container} request
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (container)(kubernetes_state_container_cpu_limit{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_instance="suse-observability", container=~"receiver|receiver-base|vmagent|opentelemetry-collector"})
+                        alias: ${container} limit
+              display:
+                name: CPU Usage Processing
+                description: "CPU usage of receiver, vmagent, and OpenTelemetry collector
+                  pods, against their configured request and limit. A missing limit line
+                  means no CPU limit is set."
+          jGL_6sXlItqnyvKC2NU_D:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 2
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (cluster_name, namespace,
+                          pod_name)(max_over_time(container_cpu_usage{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-victoria-metrics-.*"}[${__interval}]))
+                          / 1000000000
+                        alias: ${pod_name}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(kubernetes_state_container_cpu_requested{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_instance="suse-observability", container=~"victoria-metrics-\\d-server"})
+                        alias: ${pod_name} request
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(kubernetes_state_container_cpu_limit{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_instance="suse-observability", container=~"victoria-metrics-\\d-server"})
+                        alias: ${pod_name} limit
+              display:
+                name: CPU Usage VictoriaMetrics
+                description: "CPU usage of VictoriaMetrics pods, against their configured
+                  request and limit. A missing limit line means no CPU limit is set."
+          LENPxpypcWV-l3jYWsgPA:
+            spec:
+              plugin:
+                kind: GaugeChart
+                spec:
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 0.9
+                      - color: "#FF7F00"
+                        value: 0.8
+                    mode: absolute
+                  max: 1
+                  format:
+                    unit: percentunit
+                    decimalPlaces: 0
+                  calculation: last
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (storage)(label_replace(max_over_time(kubernetes_kubelet_volume_stats_used_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~"server-volume-.*-(victoria-metrics-.+)"}[5m])
+                          /
+                          max_over_time(kubernetes_kubelet_volume_stats_capacity_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~"server-volume-.*-(victoria-metrics-.+)"}[5m]),
+                          "storage","$1",  "persistentvolumeclaim",
+                          "server-volume-.*-(victoria-metrics-.+)"))
+                        alias: ${storage}
+              display:
+                name: Volume usage
+                description: "Percentage of persistent volume capacity used by VictoriaMetrics."
+          cpuPressurePanelMetricsPath:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: s
+                      decimalPlaces: 3
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (container)(max_over_time(container_cpu_partial_stall{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_instance="suse-observability", container=~"receiver|receiver-base|vmagent|opentelemetry-collector|victoria-metrics-\\d-server"}[${__interval}]))
+                          / 1000000000
+                        alias: ${container}
+              display:
+                name: CPU Pressure
+                description: >-
+                  Time these containers spent stalled waiting for CPU, from kernel
+                  pressure stall information.
+
+                  Unlike CPU Throttling this reports contention even when no CPU limit
+                  is set, so it is the signal to use when comparing CPU requests. Read
+                  it as a trend: rising stall alongside flat throughput means the
+                  workload is CPU starved.
+          vmPendingRowsPanelMetricsPath:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (pod_name,
+                          type)(stackstate_vm_pending_rows{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-victoria-metrics-.*"})
+                        alias: ${pod_name} ${type}
+              display:
+                name: VictoriaMetrics - Pending rows
+                description: >-
+                  Rows buffered in memory before VictoriaMetrics has written them to
+                  storage, split by storage and indexdb.
+
+                  A steady baseline is normal. Sustained growth means ingestion is
+                  arriving faster than it can be persisted, and is the first place
+                  backpressure appears in the metrics path.
+          vmagentQueueWritePanelMetricsPath:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 3
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(rate(stackstate_vm_persistentqueue_write_duration_seconds_total{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-vmagent-.*"}[${__rate_interval}]))
+                        alias: ${pod_name}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(stackstate_vmagent_remotewrite_pending_data_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          pod_name=~"suse-observability-vmagent-.*"}) / 1000000
+                        alias: ${pod_name} pending MB
+              display:
+                name: vmagent - Write queue
+                description: >-
+                  Seconds per second that vmagent spent writing to its on-disk
+                  persistent queue, alongside the megabytes currently pending.
+
+                  Both sitting at zero means remote write is keeping up. Writing time
+                  above zero means vmagent is spilling to disk because the metric store
+                  is not accepting data fast enough.
+          collectorQueueOccupancyPanelMetricsPath:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percentunit
+                      decimalPlaces: 2
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps:
+                      - color: "#FF7F00"
+                        value: 0.8
+                      - color: "#E31A1C"
+                        value: 0.9
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (pod_name,
+                          exporter)(stackstate_otelcol_exporter_queue_size{cluster_name="${cluster}",
+                          namespace="${namespace}", data_type="metrics"}) / sum by
+                          (pod_name,
+                          exporter)(stackstate_otelcol_exporter_queue_capacity{cluster_name="${cluster}",
+                          namespace="${namespace}", data_type="metrics"})
+                        alias: ${exporter}
+              display:
+                name: OTel Collector - Metrics export queue occupancy
+                description: >-
+                  How full the collector's metric export queue is, as a fraction of its
+                  configured capacity.
+
+                  Occupancy is the useful form rather than raw depth, because capacity
+                  differs per exporter and per profile. A queue at capacity drops or
+                  refuses data rather than buffering it further.
+          receiverBackpressurePanelMetricsPath:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percentunit
+                      decimalPlaces: 2
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps:
+                      - color: "#FF7F00"
+                        value: 0.8
+                      - color: "#E31A1C"
+                        value: 0.95
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (pod_name)(stackstate_stackstate_receiver_memory_limiter_claimed_size{cluster_name="${cluster}",
+                          namespace="${namespace}"}) / sum by
+                          (pod_name)(stackstate_stackstate_receiver_memory_limiter_limit{cluster_name="${cluster}",
+                          namespace="${namespace}"})
+                        alias: ${pod_name}
+              display:
+                name: Receiver - Memory limiter saturation
+                description: >-
+                  Share of the receiver's memory limiter budget currently claimed.
+
+                  The receiver has no queue to measure; this is its backpressure
+                  equivalent, because reaching the limit is what makes it start
+                  rejecting incoming data.
+          Ao0rRQFkI3j5Va7erPJP3:
+            spec:
+              plugin:
+                kind: Markdown
+                spec:
+                  text: >-
+                    # More details
+
+                    These are the pods and workloads involved in the metrics pipeline:
+
+
+                    *
+                    [Pods](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:pods/overview?query=label%20IN%20%28"app.kubernetes.io%2Fcomponent%3Areceiver"%2C%20"app.kubernetes.io%2Fcomponent%3Areceiver-base"%2C%20"app.kubernetes.io%2Fname%3Avictoria-metrics-0"%2C%20"app.kubernetes.io%2Fname%3Avictoria-metrics-1"%2C%20"app.kubernetes.io%2Fname%3Aopentelemetry-collector"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20%3D%20"pod")
+
+                    *
+                    [Statefulsets](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:statefulsets/overview?query=label%20IN%20%28"app.kubernetes.io%2Fname%3Avictoria-metrics-0"%2C%20"app.kubernetes.io%2Fname%3Avictoria-metrics-1"%2C%20"app.kubernetes.io%2Fname%3Aopentelemetry-collector"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20IN%28"statefulset"%29)
+
+                    *
+                    [Deployments](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:deployments/overview?query=label%20IN%20%28"app.kubernetes.io%2Fcomponent%3Areceiver"%2C"app.kubernetes.io%2Fcomponent%3Areceiver-base"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20IN%28"deployment"%29)
+              links: []
+              queries: []
+              display:
+                name: "-"
+                description: "Links to related Pods, StatefulSets, and Deployments."
+        layouts:
+          - kind: Grid
+            spec:
+              items:
+                - x: 0
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/eIFw6RjqVknqJoWc309aa"
+                - x: 16
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/6RpPvPOqS5SdnjYcbMZtB"
+                - x: 8
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/b2OMg07XzmxsM0C6TiFoP"
+                - x: 0
+                  y: 0
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/tSVthJSBDQ55Ag0zWATTh"
+                - x: 0
+                  y: 4
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/H5gtvG8QRQgcH2_9kvYLJ"
+                - x: 8
+                  y: 4
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/1LYJbBBKSUMFsD1dbNDvi"
+                - x: 16
+                  y: 4
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/jGL_6sXlItqnyvKC2NU_D"
+                - x: 0
+                  y: 6
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/cpuPressurePanelMetricsPath"
+                - x: 8
+                  y: 6
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/vmPendingRowsPanelMetricsPath"
+                - x: 16
+                  y: 6
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/vmagentQueueWritePanelMetricsPath"
+                - x: 0
+                  y: 8
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/collectorQueueOccupancyPanelMetricsPath"
+                - x: 8
+                  y: 8
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/receiverBackpressurePanelMetricsPath"
+                - x: 8
+                  y: 0
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/LENPxpypcWV-l3jYWsgPA"
+                - x: 16
+                  y: 0
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/Ao0rRQFkI3j5Va7erPJP3"
+        variables:
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricLabelValues
+                spec:
+                  labelName: cluster_name
+                  matchers:
+                    - stackstate_stackstate_receiver_element_create_passed_count
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: cluster
+              display:
+                name: Cluster
+                description: ""
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricPromQL
+                spec:
+                  labelName: namespace
+                  expr: stackstate_stackstate_receiver_element_create_passed_count{cluster_name="${cluster}"}
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: namespace
+              display:
+                name: Namespace
+                description: ""

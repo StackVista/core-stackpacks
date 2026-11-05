@@ -1,0 +1,50 @@
+SUSE Observability logs are rejected when one or more log sources (for example pods) are generating more logs than their budget based on the log retention and disk space available. Solutions:
+
+### Troubleshoot steps
+- The cause can be an increase in log volume for 1 or more sources, for example because debug logging was enabled for an application. The solution in that case is to reduce the log volume for these pods.
+- If the log volume is legitimate and not expected to change either the available disk space can be increased or the retention can be decreased.
+
+### Increase Disk Space for ElasticSearch
+1. Verify the current ElasticSearch disk space and inspect its configuration to check the current size.
+    * Verify that the used storage class can be resized. For that please follow our [resizing documentation] https://docs.stackstate.com/self-hosted-setup/data-management/data_retention#resizing-storage
+2. Update the values.yaml adding more
+```
+elasticsearch:
+  volumeClaimTemplate:
+    resources:
+      requests:
+        storage: 250Gi
+```
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```
+
+For more detailed information visit our [data-retention](https://docs.stackstate.com/self-hosted-setup/data-management/data_retention) documentation.
+
+### Decrease retention for logs
+1. By default, SUSE Observability sets a 7-day retention for logs
+2. Update the values.yaml with a lower retention
+```
+stackstate:
+  components:
+    receiver:
+      # Number of days to keep the logs data on Es
+      retention: 7
+```
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```

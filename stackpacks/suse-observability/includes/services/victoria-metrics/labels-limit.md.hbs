@@ -1,0 +1,38 @@
+VictoriaMetrics limits the number of labels per each metric with '-maxLabelsPerTimeseries' command-line flag.\n
+This prevents from ingesting metrics with too many labels. Please verify that '-maxLabelsPerTimeseries' is configured
+correctly or that clients which send these metrics aren't misbehaving.
+
+### Troubleshooting steps
+1. Inspect the [Configuration](/#/components/{{ componentUrnForUrl }}#configuration) of this pod and look for the `-maxLabelsPerTimeseries` argument.
+```
+spec:
+  automountServiceAccountToken: true
+  containers:
+  - args:
+  - --dedup.minScrapeInterval=1ms
+  - --envflag.enable=true
+  - --envflag.prefix=VM_
+  - --loggerFormat=json
+  - --maxLabelsPerTimeseries=35
+  - --retentionPeriod=15d
+  - --storageDataPath=/storage
+```
+
+Please verify that '-maxLabelsPerTimeseries' is configured correctly or that clients which send these metrics aren't misbehaving.
+
+2. Update your helm `values.yaml` to allow more labels just in case you really need them and can't remove any.
+```
+  victoria-metrics-0:
+    extraArgs:
+      maxLabelsPerTimeseries: 35
+```
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```

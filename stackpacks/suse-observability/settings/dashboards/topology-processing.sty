@@ -1,0 +1,642 @@
+nodes:
+  - _type: Dashboard
+    identifier: urn:stackpack:suse-observability:dashboard:topology-processing
+    name: SUSE Observability - Topology processing
+    description: ""
+    dashboard:
+      metadata:
+        project: '{"saveVariables":false}'
+      spec:
+        panels:
+          dBMublgJcGkzpzDGSKUvq:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: s
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by (integration_type)
+                          (stackstate_stackstate_sync_stage_latency_seconds_quantile{start_stage="enterReceiver",
+                          end_stage="commit", quantile="1.0",
+                          cluster_name="${cluster}", namespace="${namespace}",
+                          kube_app_component=~"sync|server",
+                          kube_app_name=~"stackstate|stackstate-k8s|suse-observability"})
+                        alias: ${integration_type}
+              display:
+                name: Topology Sync Internal Latency
+                description: "Internal latency within the topology synchronization process."
+          zv3RIlz8UQBwAoCBrrpRC:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: s
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by (pod_name, integration_type)
+                          (stackstate_stackstate_sync_stage_latency_seconds_quantile{start_stage="source",
+                          end_stage="commit", quantile="1.0",
+                          cluster_name="${cluster}", namespace="${namespace}",
+                          kube_app_component=~"sync|server",
+                          kube_app_name=~"stackstate|stackstate-k8s|suse-observability"})
+                        alias: ${integration_type}
+              display:
+                name: Topology Sync Latency
+                description: "Total latency of the topology synchronization process from source to commit."
+          3Py1h-ak88rlmOZpULtQB:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: cps
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: topk(5, sum by (pod_name, topic)
+                          (stackstate_kafka_consumer_consumer_fetch_manager_metrics_records_lag{cluster_name="${cluster}",
+                          kube_app_component=~"sync|server",
+                          kube_app_name=~"stackstate|stackstate-k8s|suse-observability"}))
+                        alias: ${topic}
+              display:
+                name: Top 5 Topology Sync Topic lag
+                description: "Lag in processing topology synchronization topics for the top 5 consumers."
+          iiJ3ngNvJpch-G_1kggvS:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (element_type)(stackstate_stackstate_sync_topo_total_counts{cluster_name="${cluster}",
+                          kube_app_component=~"sync|server",
+                          kube_app_name=~"stackstate|stackstate-k8s|suse-observability"})
+                        alias: ${element_type}
+              display:
+                name: Topology Sync Elements count
+                description: "Total count of topology elements synchronized."
+          bLeT4qQjqsZBvePCyyctd:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percentunit
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (element_type)
+                          (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_count{cluster_name="${cluster}",
+                          namespace="${namespace}"}[${__interval}])) / sum by
+                          (element_type)
+                          (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_max{cluster_name="${cluster}",
+                          namespace="${namespace}"}[${__interval}]))
+                        alias: ${element_type}
+              display:
+                name: Profile budget saturation
+                description: "Ratio of processed elements to the maximum allowed budget."
+          zf9-XhnHykeb7b_PZPALv:
+            spec:
+              plugin:
+                kind: GaugeChart
+                spec:
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 0.9
+                      - color: "#FF7F00"
+                        value: 0.8
+                    mode: absolute
+                  format:
+                    unit: percentunit
+                    decimalPlaces: 0
+                  calculation: last
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (element_type)
+                          (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_count{cluster_name="${cluster}",
+                          namespace="${namespace}"}[${__interval}])) / sum by
+                          (element_type)
+                          (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_max{cluster_name="${cluster}",
+                          namespace="${namespace}"}[${__interval}]))
+                        alias: ${element_type}
+              display:
+                name: Profile budget saturation
+                description: "Ratio of processed elements to the maximum allowed budget."
+          hExuFO5EwYoceUpJ9gHv4:
+            spec:
+              plugin:
+                kind: GaugeChart
+                spec:
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 50
+                      - color: "#FF7F00"
+                        value: 30
+                    mode: absolute
+                  max: 60
+                  format:
+                    unit: s
+                    decimalPlaces: 1
+                  calculation: last
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max
+                          (stackstate_stackstate_sync_stage_latency_seconds_quantile{start_stage="enterReceiver",
+                          end_stage="commit", quantile="1.0",
+                          cluster_name="${cluster}", namespace="${namespace}",
+                          kube_app_component=~"sync|server",
+                          kube_app_name=~"stackstate|stackstate-k8s|suse-observability"})
+                        alias: Latency internal
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max
+                          (stackstate_stackstate_sync_stage_latency_seconds_quantile{start_stage="source",
+                          end_stage="commit", quantile="1.0",
+                          cluster_name="${cluster}", namespace="${namespace}",
+                          kube_app_component=~"sync|server",
+                          kube_app_name=~"stackstate|stackstate-k8s|suse-observability"})
+                        alias: Latency total
+              display:
+                name: Topology Sync Latency
+                description: "Current internal and total latency for topology synchronization."
+          bIYe-LnD5LgOMa47Cou8W:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: table
+                    values:
+                      - max
+                      - min
+                      - mean
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (element_type)(max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          element_type='agent'}[${__interval}]))
+                        alias: node
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (element_type)(max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          element_type!='agent'}[${__interval}]))
+                        alias: ${element_type}
+              display:
+                name: Process agent traffic
+                description: "Traffic volume of unique elements passed by the process agent vs other agents."
+          GpHAhwMv6nirtbgom2vA5:
+            spec:
+              plugin:
+                kind: Markdown
+                spec:
+                  text: >-
+                    # Overview
+
+                    Topology input at a quick glance. How close to the profile limits
+                    are you and how up-to-date is the topology?
+
+
+                    These are the pods and workloads involved in the topology
+                    pipeline:
+
+
+                    *
+                    [Pods](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:pods/overview?query=label%20IN%20%28"app.kubernetes.io%2Fcomponent%3Areceiver"%2C%20"app.kubernetes.io%2Fcomponent%3Areceiver-base"%2C%20"app.kubernetes.io%2Fcomponent%3Areceiver-process-agent"%2C%20"app.kubernetes.io%2Fcomponent%3Async"%2C%20"app.kubernetes.io%2Fcomponent%3Aserver"%2C%20"app.kubernetes.io%2Fname%3Ahbase"%2C%20"app.kubernetes.io%2Fname%3Akafka"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20%3D%20"pod")
+
+                    *
+                    [Statefulsets](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:statefulsets/overview?query=label%20IN%20%28"app.kubernetes.io%2Fcomponent%3Areceiver"%2C%20"app.kubernetes.io%2Fcomponent%3Areceiver-base"%2C%20"app.kubernetes.io%2Fcomponent%3Areceiver-process-agent"%2C%20"app.kubernetes.io%2Fcomponent%3Async"%2C%20"app.kubernetes.io%2Fcomponent%3Aserver"%2C%20"app.kubernetes.io%2Fname%3Ahbase"%2C%20"app.kubernetes.io%2Fname%3Akafka"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20IN%28"statefulset"%29)
+
+                    *
+                    [Deployments](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:deployments/overview?query=label%20IN%20%28"app.kubernetes.io%2Fcomponent%3Areceiver"%2C%20"app.kubernetes.io%2Fcomponent%3Areceiver-base"%2C%20"app.kubernetes.io%2Fcomponent%3Areceiver-process-agent"%2C%20"app.kubernetes.io%2Fcomponent%3Async"%2C%20"app.kubernetes.io%2Fcomponent%3Aserver"%2C%20"app.kubernetes.io%2Fname%3Ahbase"%2C%20"app.kubernetes.io%2Fname%3Akafka"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20IN%28"deployment"%29)
+              links: []
+              queries: []
+              display:
+                name: "-"
+                description: "Overview of topology input and links to related workloads."
+          4GEucAw6zR3hmI1J-lO4H:
+            spec:
+              plugin:
+                kind: Markdown
+                spec:
+                  text: >-
+                    # Detailed status
+
+                    A more in-depth overview over time of the topology input in volume
+                    and latency.
+              links: []
+              queries: []
+              display:
+                name: "-"
+                description: "Detailed status of topology input volume and latency over time."
+          q5ZUHAngpZY0H0SwYKSdt:
+            spec:
+              plugin:
+                kind: StatChart
+                spec:
+                  calculation: last
+                  format:
+                    unit: short
+                    decimalPlaces: 0
+                  sparkline: true
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps: []
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (element_type)(stackstate_stackstate_sync_topo_total_counts{cluster_name="${cluster}",
+                          kube_app_component=~"sync|server",
+                          kube_app_name=~"stackstate|stackstate-k8s|suse-observability"})
+                        alias: ${element_type}
+              display:
+                name: Topology Sync Elements count
+                description: "Total count of topology elements processed."
+          Q_uoMywjEMcIh5Tp3bAd8:
+            spec:
+              plugin:
+                kind: StatChart
+                spec:
+                  calculation: last
+                  format:
+                    unit: short
+                    decimalPlaces: 0
+                  sparkline: true
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps: []
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (element_type)(max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          element_type='agent'}[${__interval}]))
+                        alias: node
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (element_type)(max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          element_type!='agent'}[${__interval}]))
+                        alias: ${element_type}
+              display:
+                name: Incoming data
+                description: "Maximum count of unique elements received from agents."
+          d7kCYa0DT6HuQXfjirCoe:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percent
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: right
+                    mode: table
+                    values:
+                      - mean
+                      - last
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: 100 * sum by (kube_app_component)
+                          (container_cpu_throttled_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_component=~"receiver|receiver-base|kafka|sync"}) /
+                          sum by (kube_app_component)
+                          (container_cpu_elapsed_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_component=~"receiver|receiver-base|kafka|sync"})
+                        alias: ${kube_app_component}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: 100 * sum by (kube_app_name)
+                          (container_cpu_throttled_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name=~"opentelemetry-collector"}) / sum by
+                          (kube_app_name)
+                          (container_cpu_elapsed_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name=~"opentelemetry-collector"})
+                        alias: ${kube_app_name}
+              display:
+                name: CPU Throttling
+                description: CPU throttling for the services that are part of the topology
+                  processing pipeline.
+          K_Av99mNhjRFhJOD-Gfud:
+            spec:
+              plugin:
+                kind: GaugeChart
+                spec:
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 0.9
+                      - color: "#FF7F00"
+                        value: 0.8
+                    mode: absolute
+                  format:
+                    unit: percentunit
+                    decimalPlaces: 0
+                  calculation: last
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (storage)(label_replace(max_over_time(kubernetes_kubelet_volume_stats_used_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~".*-(kafka-\\d|hbase-.*|sync-tmp)"}[5m])
+                          /
+                          max_over_time(kubernetes_kubelet_volume_stats_capacity_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~".*-(kafka-\\d|hbase-.*|sync-tmp)"}[5m]),
+                          "storage","$1",  "persistentvolumeclaim",
+                          ".*-(kafka-.*|hbase-.*|sync-tmp)"))
+                        alias: ${storage}
+              display:
+                name: Volume usage
+                description: "Percentage of persistent volume capacity used by Kafka, HBase, and Sync."
+        layouts:
+          - kind: Grid
+            spec:
+              items:
+                - x: 0
+                  y: 9
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/dBMublgJcGkzpzDGSKUvq"
+                - x: 8
+                  y: 9
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/zv3RIlz8UQBwAoCBrrpRC"
+                - x: 16
+                  y: 9
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/3Py1h-ak88rlmOZpULtQB"
+                - x: 8
+                  y: 7
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/iiJ3ngNvJpch-G_1kggvS"
+                - x: 16
+                  y: 7
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/bLeT4qQjqsZBvePCyyctd"
+                - x: 8
+                  y: 2
+                  width: 6
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/zf9-XhnHykeb7b_PZPALv"
+                - x: 19
+                  y: 2
+                  width: 5
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/hExuFO5EwYoceUpJ9gHv4"
+                - x: 0
+                  y: 7
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/bIYe-LnD5LgOMa47Cou8W"
+                - x: 0
+                  y: 0
+                  width: 24
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/GpHAhwMv6nirtbgom2vA5"
+                - x: 0
+                  y: 6
+                  width: 24
+                  height: 1
+                  content:
+                    $ref: "#/spec/panels/4GEucAw6zR3hmI1J-lO4H"
+                - x: 14
+                  y: 2
+                  width: 5
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/q5ZUHAngpZY0H0SwYKSdt"
+                - x: 0
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/Q_uoMywjEMcIh5Tp3bAd8"
+                - x: 0
+                  y: 11
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/d7kCYa0DT6HuQXfjirCoe"
+                - x: 0
+                  y: 4
+                  width: 24
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/K_Av99mNhjRFhJOD-Gfud"
+        variables:
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricLabelValues
+                spec:
+                  labelName: cluster_name
+                  matchers:
+                    - stackstate_stackstate_receiver_element_create_passed_count
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: cluster
+              display:
+                name: Cluster
+                description: ""
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricPromQL
+                spec:
+                  labelName: namespace
+                  expr: stackstate_stackstate_receiver_element_create_passed_count{cluster_name="${cluster}"}
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: namespace
+              display:
+                name: Namespace
+                description: ""

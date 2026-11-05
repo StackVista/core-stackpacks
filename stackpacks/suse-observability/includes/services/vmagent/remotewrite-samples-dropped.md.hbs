@@ -1,0 +1,9 @@
+vmagent is discarding samples rather than delivering them. This is unrecoverable data loss: unlike a full queue, dropped samples are never retried.
+
+Check:
+
+- `stackstate_vmagent_remotewrite_pending_data_bytes` and the persistent queue - drops usually follow a queue that has been full for some time
+- whether VictoriaMetrics is rejecting writes, via the `Rows rejected` and `Storage is read only` monitors
+- `stackstate_vmagent_remotewrite_rate_limit_reached_total` if a remote-write rate limit is configured
+
+Fix the downstream cause rather than growing the queue; a larger queue only delays the same loss.

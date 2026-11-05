@@ -1,0 +1,80 @@
+nodes:
+  - _type: "Monitor"
+    name: "Long GCs"
+    tags:
+      - jvm
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-java-long-gc
+    status: "ENABLED"
+    description: "Warn when the time of old-gen garbage collects gets above a certain threshold."
+    arguments:
+      comparator: "GT"
+      titleTemplate: "Java long GCs"
+      failureState: "DEVIATING"
+      threshold: 4
+      metric:
+        query: |-
+          sum by (pod_name, namespace, cluster_name) (
+            (rate(stackstate_jvm_gc_collection_seconds_sum{gc="G1 Old Generation"}[5m])
+              /
+              rate(stackstate_jvm_gc_collection_seconds_count{gc="G1 Old Generation"}[5m]))
+             or (present_over_time(stackstate_jvm_gc_collection_seconds_count{gc="G1 Old Generation"}[5m]) - 1))
+          or
+          sum by (pod_name, namespace, cluster_name) (
+            (rate(stackstate_jvm_gc_collection_seconds_sum{gc="G1 Old Generation"}[5m])
+              /
+              rate(stackstate_jvm_gc_collection_seconds_count{gc="G1 Old Generation"}[5m])
+              ) or (present_over_time(stackstate_jvm_gc_collection_seconds_count{gc="G1 Old Generation"}[5m]) - 1)
+           )
+        aliasTemplate: "${gc}"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include generic/sts-java-long-gc.md.hbs
+  - _type: "Monitor"
+    name: "Total time spend in Old Gen GC"
+    tags:
+      - jvm
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-java-gc-time-spent
+    status: "ENABLED"
+    description: "Deviating when the amount of time spent on old generation garbagecollect exceeds a threshold."
+    arguments:
+      comparator: "GT"
+      titleTemplate: "Java GC time spent"
+      failureState: "DEVIATING"
+      threshold: 0.2
+      metric:
+        query: |-
+          sum by (pod_name, namespace, cluster_name) (rate(stackstate_jvm_gc_collection_seconds_sum{gc="G1 Old Generation"}[5m]))
+              or
+          sum by (pod_name, namespace, cluster_name) (rate(stackstate_jvm_gc_collection_seconds_sum{gc="G1 Old Generation"}[5m]))
+        aliasTemplate: "${gc}"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include generic/sts-java-long-gc.md.hbs
+  - _type: "Monitor"
+    name: "Java threads deadlocked"
+    tags:
+      - jvm
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-java-threads-deadlocked
+    status: "ENABLED"
+    description: "Critical state when there are deadlocked threads in the JVM."
+    arguments:
+      comparator: "GT"
+      titleTemplate: "Java threads deadlocked"
+      failureState: "CRITICAL"
+      threshold: 1.5
+      metric:
+        query: |-
+          sum by (pod_name, namespace, cluster_name) (max_over_time(stackstate_jvm_threads_deadlocked{}[5m]))
+        aliasTemplate: "# threads deadlocked"
+        unit: short
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: "Deadlocked threads indicate a problem within the application that needs to be resolved via a code change. A short-term, temporary, mitigation is to restart the application but the deadlock may return. Depending on the likelihood of the deadlock it may return immediately or only after a long period of time."

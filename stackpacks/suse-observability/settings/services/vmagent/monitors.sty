@@ -1,0 +1,165 @@
+nodes:
+  - _type: "Monitor"
+    name: "Vmagent - Persistent queue is droppingData"
+    tags:
+      - vmagent
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:vmagent-queue-dropping-data
+    arguments:
+      metric:
+        query: |-
+          sum(increase(stackstate_vm_persistentqueue_bytes_dropped_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "bytes(IEC)"
+        aliasTemplate: "Bytes dropped"
+      comparator: GT
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Persistent queue is dropping data"
+    intervalSeconds: 90
+    remediationHint: !include services/vmagent/persistentqueue-dropping-data.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "Vmagent - RemoteWrite packets dropped"
+    tags:
+      - vmagent
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:vmagent-remotewrite-packets-dropped
+    arguments:
+      metric:
+        query: |-
+          sum(increase(stackstate_vmagent_remotewrite_packets_dropped_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Packets dropped"
+      comparator: GT
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "RemoteWrite packets dropped"
+    intervalSeconds: 90
+    remediationHint: "Vmagent drops the rejected by remote-write server data blocks. Check the logs to find the reason for rejects"
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "Vmagent - Too many write errors"
+    tags:
+      - vmagent
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:vmagent-errors
+    arguments:
+      metric:
+        query: |-
+          (sum(increase(stackstate_vm_ingestserver_request_errors_total[5m])) by (cluster_name, namespace, pod_name)
+          +
+          sum(increase(stackstate_vmagent_http_request_errors_total[5m])) by (cluster_name, namespace, pod_name))
+        unit: "short"
+        aliasTemplate: "Error count"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Write errors"
+    intervalSeconds: 90
+    remediationHint: "Vmagent responds with errors to write requests. Check the logs to find the reason for the errors"
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "Vmagent - Too many remote write errors"
+    tags:
+      - vmagent
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:vmagent-remotewrite-errors
+    arguments:
+      metric:
+        query: |-
+          sum(rate(stackstate_vmagent_remotewrite_retries_count_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Error count"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Remote write errors"
+    intervalSeconds: 90
+    remediationHint: "Vmagent responds with errors to remote write requests. Check the logs to find the reason for the errors"
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "Vmagent - Remote write connection is saturated"
+    tags:
+      - vmagent
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:vmagent-remotewrite-connection-saturated
+    arguments:
+      metric:
+        query: |-
+          sum(
+            rate(stackstate_vmagent_remotewrite_send_duration_seconds_total[5m])
+            /
+            stackstate_vmagent_remotewrite_queues
+          ) by (cluster_name, namespace, pod_name)
+        unit: "percentunit"
+        aliasTemplate: "Saturation %"
+      comparator: GT
+      threshold: 0.9
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Remote write connection saturated"
+    intervalSeconds: 90
+    remediationHint: "The remote write connection between vmagent and destination
+            is saturated by more than 90% and vmagent won't be able to keep up.\n
+            This usually means that `-remoteWrite.queues` command-line flag must be increased in order to increase
+            the number of connections per each remote storage."
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "Vmagent - Persistent queue for writes is saturated"
+    tags:
+      - vmagent
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:vmagent-persistent-queue-saturated
+    arguments:
+      metric:
+        query: |-
+          sum(rate(stackstate_vm_persistentqueue_write_duration_seconds_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "percentunit"
+        aliasTemplate: "Saturation %"
+      comparator: GT
+      threshold: 0.9
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Persistent queue writes saturated"
+    intervalSeconds: 90
+    remediationHint: "Persistent queue writes for vmagent
+            are saturated by more than 90% and vmagent won't be able to keep up with flushing data on disk. 
+            In this case, consider to decrease load on the vmagent or improve the disk throughput."
+    status: "ENABLED"
+  - _type: "Monitor"
+    name: "Vmagent - Samples dropped on remote write"
+    description: "Monitor that triggers when vmagent discards samples instead of delivering them to the metric store"
+    tags:
+      - vmagent
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:vmagent-remotewrite-samples-dropped
+    arguments:
+      metric:
+        query: |-
+          sum(increase(stackstate_vmagent_remotewrite_samples_dropped_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Samples dropped"
+      comparator: GT
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Samples dropped on remote write"
+    intervalSeconds: 90
+    remediationHint: !include services/vmagent/remotewrite-samples-dropped.md.hbs
+    status: "ENABLED"

@@ -1,0 +1,257 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Receiver"
+    description: "ComponentPresentation for SUSE Observability Receiver"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-receiver-pod
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: |-
+        label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability")
+        and label IN ("app.kubernetes.io/component:receiver-base", "app.kubernetes.io/component:receiver-process-agent", "app.kubernetes.io/component:receiver")
+        and type in ("pod")
+    rank:
+      specificity: 10
+    presentation:
+      highlight:
+        title: "SUSE Observability Receiver"
+        fields: []
+        links:
+          - linkId: data-ingestion-dashboard
+            title: "Data ingestion dashboard"
+            target: "#/dashboards/urn:stackpack:suse-observability:dashboard:data-ingestion"
+            tooltip: "Open the bundled SUSE Observability data ingestion dashboard"
+            order: 100.0
+          - linkId: topology-processing-dashboard
+            title: "Topology processing dashboard"
+            target: "#/dashboards/urn:stackpack:suse-observability:dashboard:topology-processing"
+            tooltip: "Open the bundled SUSE Observability topology processing dashboard"
+            order: 90.0
+          - linkId: traces-processing-dashboard
+            title: "Traces processing dashboard"
+            target: "#/dashboards/urn:stackpack:suse-observability:dashboard:traces-processing"
+            tooltip: "Open the bundled SUSE Observability traces processing dashboard"
+            order: 80.0
+          - linkId: logs-processing-dashboard
+            title: "Logs processing dashboard"
+            target: "#/dashboards/urn:stackpack:suse-observability:dashboard:logs-processing"
+            tooltip: "Open the bundled SUSE Observability logs processing dashboard"
+            order: 70.0
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: receiver
+                title: Receiver
+                order: 100
+                metrics:
+                  - metricId: sts-receiver-incoming-data
+                  - metricId: sts-receiver-pod-current-incoming-element-count
+                  - metricId: sts-receiver-pod-current-incoming-element-created
+                  - metricId: sts-receiver-pod-budget-saturation
+                  - metricId: sts-receiver-pod-created-budget-saturation
+                  - metricId: sts-receiver-pod-agent-count
+                  - metricId: sts-receiver-pod-created-elements
+                  - metricId: sts-receiver-pod-active-http-requests
+                  - metricId: sts-receiver-pod-log-volume
+                  - metricId: sts-receiver-pod-rejected-log-volume
+    metrics:
+      -
+        metricId: sts-receiver-pod-current-incoming-element-count
+        name: SUSE Observability Receiver - Current incoming element (approximate) count
+        description: Amount of data being offered to the receiver at this moment
+        metricQueries:
+          - expression: |-
+              sum by (element_type) (avg_over_time(stackstate_stackstate_receiver_unique_element_request_approx_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}]))
+            alias: "${element_type}"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-receiver-pod-current-incoming-element-created
+        name: SUSE Observability Receiver - Created elements in the last hour (approximate) count
+        description: Amount of elements expected to result in new element creates in SUSE Observability
+        metricQueries:
+          - expression: |-
+              sum by (element_type) (avg_over_time(stackstate_stackstate_receiver_element_create_request_approx_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}]))
+            alias: "${element_type}"
+          - expression: |-
+              sum by (element_type) (avg_over_time(stackstate_stackstate_receiver_element_create_passed_max{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}]))
+            alias: Budget ${element_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-receiver-pod-budget-saturation
+        name: SUSE Observability Receiver - Element budget saturation
+        description: Percentage of agent element processing budget filled up
+        metricQueries:
+          - expression: |-
+              sum by (element_type) (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}])) / sum by (element_type) (avg_over_time(stackstate_stackstate_receiver_unique_element_passed_max{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}]))
+            alias: "${element_type}"
+        chart:
+          _type: TimeSeriesChart
+          unit: percentunit
+      -
+        metricId: sts-receiver-pod-created-budget-saturation
+        name: SUSE Observability Receiver - Created elements hourly budget saturation
+        description: Percentage of newly created elements budget filled up
+        metricQueries:
+          - expression: |-
+              sum by (element_type) (avg_over_time(stackstate_stackstate_receiver_element_create_passed_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}])) / sum by (element_type) (avg_over_time(stackstate_stackstate_receiver_element_create_passed_max{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}]))
+            alias: "${element_type}"
+        chart:
+          _type: TimeSeriesChart
+          unit: percentunit
+      -
+        metricId: sts-receiver-pod-agent-count
+        name: SUSE Observability Receiver - Connected agent count
+        description: Number of currently connected agents
+        metricQueries:
+          - expression: |-
+              max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{
+                element_type="agent",
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__interval}])
+            alias: Agent Count
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-receiver-pod-created-elements
+        name: SUSE Observability Receiver - Created elements hourly total
+        description: Total elements created per hour
+        metricQueries:
+          - expression: |-
+              sum by (element_type) (stackstate_stackstate_receiver_element_create_passed_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              })
+            alias: "${element_type}"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-receiver-pod-active-http-requests
+        name: SUSE Observability Receiver - Active HTTP Requests
+        description: Currently active http requests, this should not be an ever increasing line (see monitor)
+        metricQueries:
+          - expression: |-
+              delta(stackstate_akka_http_requests_active{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__rate_interval}])
+            alias: Active Requests
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-receiver-pod-log-volume
+        name: SUSE Observability Receiver - Log volume
+        description: The volume of logs received by Stackstate, accepted logs are stored, rejected logs are dropped because they are over the allocated disk-space
+        metricQueries:
+          - expression: |-
+              rate(stackstate_stackstate_receiver_events_accepted_size{
+                element_type="k8sLogs",
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__rate_interval}])
+            alias: Accepted
+          - expression: |-
+              rate(stackstate_stackstate_receiver_events_rejected_size{
+                element_type="k8sLogs",
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__rate_interval}])
+            alias: Rejected
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes/sec(IEC)
+      -
+        metricId: sts-receiver-pod-rejected-log-volume
+        name: SUSE Observability Receiver - Rejected Log volume per pod
+        description: The volume of logs rejected by Stackstate per pod
+        metricQueries:
+          - expression: |-
+              topk(10, rate(stackstate_stackstate_receiver_logs_rejected_size{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[${__rate_interval}])) @ end()
+            alias: ${limited_pod_name} Rejected by - ${cluster_name}/${namespace}/${pod_name}
+            componentIdentifierTemplate: "urn:kubernetes:/${cluster_name}/pod/${limited_pod_uid}"
+          - expression: |-
+              max(stackstate_stackstate_receiver_logs_budget_per_pod {
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              })
+            alias: Logs budget per pod per time window
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes/sec(IEC)
+      -
+        metricId: sts-receiver-incoming-data
+        name: Incoming data
+        description: "Maximum count of unique elements received from agents."
+        metricQueries:
+          - expression: |-
+              max by (element_type)(max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{
+                cluster_name="${tags.singleValue('cluster')}",
+                namespace="${tags.singleValue('namespace')}",
+                element_type='agent'
+              }[${__interval}]))
+            alias: node
+          - expression: |-
+              max by (element_type)(max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                element_type!='agent'
+              }[${__interval}]))
+            alias: ${element_type}
+        chart:
+          _type: StatChart
+          unit: short
+          decimals: 0
+          calculation: last
+          sparkline: true
+          thresholds:
+            defaultColor: "#33A02C"
+            steps: []

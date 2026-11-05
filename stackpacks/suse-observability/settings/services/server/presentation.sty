@@ -1,0 +1,41 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Server"
+    description: "ComponentPresentation for SUSE Observability Server"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-server
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:server") and type in ("pod", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: consumer-lag
+                title: Consumer lag
+                order: 100
+                metrics:
+                  - metricId: sts-server-kafka-lag
+    metrics:
+      -
+        metricId: sts-server-kafka-lag
+        description: 'Kafka consumer lag per topic'
+        name: Kafka Topic lag
+        metricQueries:
+          - expression: |-
+              sum by (pod_name, topic) (stackstate_kafka_consumer_consumer_fetch_manager_metrics_records_lag{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              })
+            alias: ${pod_name} - ${topic}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps

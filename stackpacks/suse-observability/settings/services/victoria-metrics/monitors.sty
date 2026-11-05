@@ -1,0 +1,330 @@
+nodes:
+  - _type: "Monitor"
+    name: "VictoriaMetrics - backups performed"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-0-backups-not-executed
+    arguments:
+      metric:
+        query: |-
+          sum(increase(stackstate_supercronic_successful_executions{kube_app_name=~"victoria-metrics-.*"}[12h])) by (cluster_name, namespace, pod_name)  or sum(kubernetes_state_container_running{pod_name=~"stackstate-victoria-metrics-.*", container="vmbackup"}) by (cluster_name, namespace, pod_name) * 0
+        unit: "short"
+        aliasTemplate: "Number of backups execution in 12h window"
+      comparator: LTE
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Backup performed in the last 12 hours"
+    intervalSeconds: 3600
+    remediationHint: "Potential reasons why backups haven't been executed:\n- wrong configuration of MinIO (like secrets, bucket name and so on)\n- interval between backups is longer than 12h (you have to change the configuration of the Monitor)\n\nTo investigate the problem you should check:\n- logs of `vmbackup` container\n- logs/status of `MinIO` pods"
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Disk runs out of space in 3 days"
+    description: "Monitor that triggers when free disk space will be enough only for less than 3 days"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-disk-space-3days
+    arguments:
+      metric:
+        query: |-
+          sum (
+            stackstate_vm_free_disk_space_bytes / ignoring(path)
+            (
+              (
+                rate(stackstate_vm_rows_added_to_storage_total[1d]) -
+                ignoring(type) rate(stackstate_vm_deduplicated_samples_total{type="merge"}[1d])
+              )
+            * scalar(
+                sum(stackstate_vm_data_size_bytes{type!~"indexdb.*"}) /
+                sum(stackstate_vm_rows{type!~"indexdb.*"})
+              )
+            )
+          ) by (cluster_name, namespace, pod_name)
+        unit: "s"
+        aliasTemplate: "Time to fill the disk space"
+      comparator: LTE
+      threshold: 259200
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Time to fill the disk space"
+    intervalSeconds: 90
+    remediationHint: "Taking into account current ingestion rate, free disk space will be enough only
+              for less than 3 days.\n
+              Consider to limit the ingestion rate, decrease retention or scale the disk space if possible."
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Disk runs out of space"
+    description: "Monitor that triggers when disk utilisation on the instance is more than 80%."
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-disk-space
+    arguments:
+      metric:
+        query: |-
+          sum(stackstate_vm_data_size_bytes) by (cluster_name, namespace, pod_name) /
+          (
+           sum(stackstate_vm_free_disk_space_bytes) by (cluster_name, namespace, pod_name) +
+           sum(stackstate_vm_data_size_bytes) by (cluster_name, namespace, pod_name)
+          )
+        unit: "percentunit"
+        aliasTemplate: "Disk space usage"
+      comparator: GT
+      threshold: 0.8
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Disk space usage"
+    intervalSeconds: 90
+    remediationHint: "Disk utilisation on the instance is more than 80%.\n
+              Having less than 20% of free disk space could cripple merges processes and overall performance.
+              Consider to limit the ingestion rate, decrease retention or scale the disk space if possible."
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Requests errors to api"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-errors
+    arguments:
+      metric:
+        query: |-
+          sum(increase(stackstate_vm_http_request_errors_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Errors"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Request errors to api"
+    intervalSeconds: 90
+    remediationHint: !include services/victoria-metrics/errors.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Rows rejected on ingestion"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-rows-rejected
+    arguments:
+      metric:
+        query: |-
+          sum(rate(stackstate_vm_rows_ignored_total[5m])) by (cluster_name, namespace, pod_name, instance, reason)
+        unit: "short"
+        aliasTemplate: "Rows rejected"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Rows rejected due to: ${reason}"
+    intervalSeconds: 90
+    remediationHint: !include services/victoria-metrics/rejected.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Too high churn rate"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-churn-rate
+    arguments:
+      metric:
+        query: |-
+          sum(rate(stackstate_vm_new_timeseries_created_total[5m])) by (cluster_name, namespace, pod_name)
+          /
+          sum(rate(stackstate_vm_rows_inserted_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Time series created"
+      comparator: GT
+      threshold: 0.1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "High churn rate"
+    intervalSeconds: 90
+    description: "VM constantly creates new time series.\n
+              This effect is known as Churn Rate.\n
+              High Churn Rate tightly connected with database performance and may
+              result in unexpected OOM's or slow queries."
+    remediationHint: "The [cardinality explorer](https://docs.victoriametrics.com/#cardinality-explorer) of Victoria Metrics can help determine which metrics have the highest cardinality.  These are likely sources of churn. Only known solution is to investigate the source of the metric and remove labels that change frequently."
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Too high churn rate 24hrs"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-churn-rate-24
+    status: "ENABLED"
+    description: "The number of created new time series over last 24h is 4x times higher than
+              current number of active series.\n
+              This effect is known as Churn Rate.\n
+              High Churn Rate tightly connected with database performance and may
+              result in unexpected OOM's or slow queries."
+    arguments:
+      titleTemplate: "High churn rate 24hrs"
+      comparator: GT
+      failureState: "DEVIATING"
+      threshold: 1.0
+      metric:
+        query: |-
+          sum(increase(stackstate_vm_new_timeseries_created_total[24h])) by (cluster_name, namespace, pod_name, container)
+          / sum(max_over_time(stackstate_vm_cache_entries{type="storage/hour_metric_ids"}[24h])*4) by (cluster_name, namespace, pod_name, container)
+        aliasTemplate: "Time series created"
+        unit: short
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 90
+    remediationHint: "The [cardinality explorer](https://docs.victoriametrics.com/#cardinality-explorer) of Victoria Metrics can help determine which metrics have the highest cardinality.  These are likely sources of churn. Only known solution is to investigate the source of the metric and remove labels that change frequently."
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Too high slow insert rate"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-slow-insert-rate
+    arguments:
+      metric:
+        query: |-
+          sum(rate(stackstate_vm_slow_row_inserts_total[5m])) by (cluster_name, namespace, pod_name)
+          /
+          sum(rate(stackstate_vm_rows_inserted_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "percentunit"
+        aliasTemplate: "Percentage slow inserts"
+      comparator: GT
+      threshold: 0.05
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "High slow insert rate"
+    intervalSeconds: 90
+    remediationHint: !include services/victoria-metrics/slow-insert-rate.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Labels limit exceeded on ingestion"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-labels-limit
+    arguments:
+      metric:
+        query: |-
+          sum(increase(stackstate_vm_metrics_with_dropped_labels_total[5m])) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Dropped labels"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Labels limit exceeded on ingestion"
+    intervalSeconds: 90
+    remediationHint: !include services/victoria-metrics/labels-limit.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Storage is read only"
+    description: "Monitor that triggers when VictoriaMetrics has stopped accepting writes"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-storage-read-only
+    arguments:
+      metric:
+        query: |-
+          sum(stackstate_vm_storage_is_read_only) by (cluster_name, namespace, pod_name)
+        unit: "short"
+        aliasTemplate: "Storage is read only"
+      comparator: GT
+      threshold: 0
+      failureState: "CRITICAL"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Storage is read only"
+    intervalSeconds: 60
+    remediationHint: !include services/victoria-metrics/storage-read-only.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Insert concurrency saturated"
+    description: "Monitor that triggers when concurrent inserts reach the limit VictoriaMetrics derives from its CPU allocation"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-insert-concurrency
+    arguments:
+      metric:
+        query: |-
+          sum(avg_over_time(stackstate_vm_concurrent_insert_current{kube_app_name=~"victoria-metrics-.*"}[1m])) by (cluster_name, namespace, pod_name)
+          / sum(stackstate_vm_concurrent_insert_capacity{kube_app_name=~"victoria-metrics-.*"}) by (cluster_name, namespace, pod_name)
+        unit: "percentunit"
+        aliasTemplate: "Insert concurrency in use"
+      comparator: GTE
+      threshold: 0.9
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Insert concurrency saturated"
+    intervalSeconds: 90
+    remediationHint: !include services/victoria-metrics/insert-concurrency.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Select concurrency saturated"
+    description: "Monitor that triggers when concurrent queries reach the limit VictoriaMetrics derives from its CPU allocation"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-select-concurrency
+    arguments:
+      metric:
+        query: |-
+          sum(avg_over_time(stackstate_vm_concurrent_select_current{kube_app_name=~"victoria-metrics-.*"}[1m])) by (cluster_name, namespace, pod_name)
+          / sum(stackstate_vm_concurrent_select_capacity{kube_app_name=~"victoria-metrics-.*"}) by (cluster_name, namespace, pod_name)
+        unit: "percentunit"
+        aliasTemplate: "Select concurrency in use"
+      comparator: GTE
+      threshold: 0.9
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Select concurrency saturated"
+    intervalSeconds: 90
+    remediationHint: !include services/victoria-metrics/select-concurrency.md.hbs
+    status: "ENABLED"
+
+  - _type: "Monitor"
+    name: "VictoriaMetrics - Metrics are not fresh"
+    description: "Monitor that triggers when metrics take longer than the freshness objective to become queryable after they are scraped"
+    tags:
+      - victoria-metrics
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:victoria-metrics-freshness
+    arguments:
+      metric:
+        query: |-
+          max by (cluster_name, namespace, pod_name) (
+            min_over_time((time() - timestamp(stackstate_vm_rows_inserted_total{type="promremotewrite"}))[1m:5s])
+          )
+        unit: "s"
+        aliasTemplate: "Scrape to queryable delay"
+      comparator: GT
+      threshold: 30
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+      titleTemplate: "Metrics are not fresh"
+    intervalSeconds: 60
+    remediationHint: !include services/victoria-metrics/freshness.md.hbs
+    status: "ENABLED"

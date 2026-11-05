@@ -1,0 +1,80 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Kafka2ES"
+    description: "ComponentPresentation for SUSE Observability Kafka2ES"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-kafka-to-es-pod
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:trace2es", "app.kubernetes.io/component:mm2es", "app.kubernetes.io/component:e2es") and type in ("pod", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: kafka2es
+                title: Kafka2ES
+                order: 100
+                metrics:
+                  - metricId: sts-topo-k2es-latency
+                  - metricId: sts-topo-k2es-internal-latency
+                  - metricId: sts-topo-k2es-catch-up
+    metrics:
+      -
+        metricId: sts-topo-k2es-latency
+        description: 'Kafka2Es Latency per data type measured from collection time to database'
+        name: Kafka2Es Latency
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_kafka2es_data_latency_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: ${pod_name} - ${data_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topo-k2es-internal-latency
+        description: 'Kafka2Es Internal Latency per data type measured from reception time to database'
+        name: Kafka2Es Internal Latency
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_kafka2es_received_data_latency_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: ${pod_name} - ${data_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topo-k2es-catch-up
+        description: 'Kafka2Es time to catch up'
+        name: Kafka2Es Time to catch up
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, sum by(data_type, pod_name, le)(rate(stackstate_stackstate_kafka2es_received_data_latency_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))) / sum by(data_type, pod_name)(rate(stackstate_stackstate_kafka2es_received_data_latency_seconds_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[${__interval}]) > 0.05)
+            alias: ${pod_name} - ${data_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: s

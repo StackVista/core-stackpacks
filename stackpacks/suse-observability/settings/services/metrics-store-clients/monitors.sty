@@ -1,0 +1,23 @@
+nodes:
+  - _type: "Monitor"
+    name: "Metric store unreachable"
+    tags:
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-metric-store-unreachable
+    status: "ENABLED"
+    description: |
+      Critical state when the service cannot connect to the metric store. 
+      A circuit breaker can have 3 states, closed (0), open (1) or half-open (2). When closed, metrics queries are working normally, when open there were problems running recent queries. While open queries will be failed immediately without querying the metric store. To test connectivity the circuit breaker will switch regularly to a half-open state where 1 query request is send to the store as a test. If that passes the circuit breaker will close again.
+    arguments:
+      comparator: GT
+      failureState: "CRITICAL"
+      threshold: 0
+      metric:
+        query: |-
+          max by (cluster_name, namespace, pod_name)(min_over_time(stackstate_stackstate_metrics_circuit_breaker_status[2m]))
+        unit: short
+        aliasTemplate: "Connection status (0 = connected, > 0 = unreachable)"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/metrics-store-clients/metric-store-unreachable.md.hbs

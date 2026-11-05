@@ -1,0 +1,21 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-added-large-files
+        stages: [pre-commit]
+        exclude: "^stackstate-generated-api/.*$"
+      - id: check-case-conflict
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+      - id: detect-private-key
+        stages: [pre-commit]
+      - id: detect-aws-credentials
+        stages: [pre-commit]
+        args:
+          - --allow-missing-credentials
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.25.0
+    hooks:
+      - id: zizmor

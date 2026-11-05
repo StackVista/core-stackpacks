@@ -1,0 +1,4 @@
+.idea
+*.sts
+**/target/
+docker/rootfs/

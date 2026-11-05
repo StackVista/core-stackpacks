@@ -1,0 +1,5 @@
+ClickHouse has too many parts in one partition.
+ClickHouse MergeTree table engine split each INSERT statement to partitions (PARTITION BY expression)
+and add one or more PARTS per INSERT inside each partition, after that background merge process run,
+and when you have too much unmerged parts inside partition,
+SELECT statements performance can significant degrade, so clickhouse tries to delay or reject INSERT

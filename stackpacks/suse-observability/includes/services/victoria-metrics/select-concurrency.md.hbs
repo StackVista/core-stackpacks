@@ -1,0 +1,5 @@
+Concurrent queries are at the limit VictoriaMetrics derives from the CPU it detects. Further queries wait, and can time out.
+
+Check `stackstate_vm_concurrent_select_limit_reached_total` to confirm queries are being held, and `stackstate_vm_slow_queries_total` for expensive queries driving it.
+
+Usual causes are dashboards or monitors querying long ranges over many series. Narrow the heaviest queries, or raise the CPU allocation - the limit scales with detected CPU.

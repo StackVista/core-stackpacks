@@ -1,0 +1,53 @@
+SUSE Observability has detected that more than {{threshold}}% spans for your service have an Error
+status, this may lead to noticeable disruptions or degraded performance for end-users.
+
+Take the following steps to diagnose the problem:
+
+## Possible causes
+
+- Slow dependency or dependency serving errors
+- Recent update of the application
+- Load on the application has increased
+- Environment issues (e.g. certain nodes, database or services that the service depends on)
+
+### Slow dependency or dependency serving errors
+When troubleshooting slow dependencies or dependencies that are serving errors, their are two ways to find the root
+cause:
+
+1. Analyze traces: begin by examining the traces with an error status in the [traces perspective](/#/components/{{
+componentUrnForUrl}}/traces?filterBy=status--Error__parentType--External%2CRoot). Expanding a span will show
+the full trace for that span. Spans with an error status are marked and slow services will be displayed as long spans in
+the trace. If you find an erroneous or slow span you can follow the link to the component to continue the investigation.
+
+2. Review Related Health Violations: Check, in the related health violations of this monitor if there are any health
+violations on one of the services or service instances that this service depends on (focus on the lowest dependency). If you find a
+violation to click on the component to see the related health violations. You can than continue your troubleshooting by
+following those health violations. The related health violations can be found in the expanded version if you read this
+in the pinned minimised version.
+
+### Recent update of the service
+
+Check if the service was recently updated:
+
+- Go to the "Events" section in the middle of the [service highlight page](/#/components/{{ componentUrnForUrl }})
+- Check if there was a recent deployment by clicking on the Deployment section.
+- Check if any of the pods are recently updated by clicking on "Pods of this service" in "Related resource" section of
+the [service highlight page](/#/components/{{ componentUrnForUrl }}) and look if their Age is recent.
+- If application has just started, it might be that the service has not warmed up yet. Compare the response time metrics
+for the current deployment with the previous deployment by checking the response time metric chart with a time interval
+including both.
+- Check if application is using more resources than before, consider scaling it up or giving it more resources.
+- If increased latency is crucial, consider rolling back the service to the previous version:
+  - if that helps, then the issue is likely with new deployment
+  - if that does not help, then the issue may be in the environment (e.g. network issues or issues with the underlying
+  infrastructure, e. g. database). [Traces](/#/components/{{componentUrnForUrl}}/traces?filterBy=duration--{{ multiply
+  threshold 1000000 }}__parentType--External%2CRoot) can be used to look deeper.
+- Repeat these steps for related services if needed
+
+Check if the amount of requests to the service has increased by looking at the "Span rate" chart on the [service highlight page](/#/components/{{ componentUrnForUrl }}). If so, a quick fix can be to start more instances for the service or giving the instances more resources like CPU and memory.
+
+### Environment issues
+
+Check the span duration of the different instances of the service. If only certain instances are having problems, it
+might be an issue with the instance itself or the server the is running on. Check if other service instances running in
+the same location show similar issues. If that's the case consider replacing the entire server.

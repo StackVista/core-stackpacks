@@ -1,0 +1,4 @@
+ClickHouse increase SlowRead in `system.events` table.
+It mean reads from a files that were slow. This indicate system overload. Thresholds are controlled by `SELECT * FROM system.settings WHERE name LIKE 'read_backoff_%'`.
+System will reduce the number of threads which used for processing queries.
+Check you disks utilization and hardware failures.

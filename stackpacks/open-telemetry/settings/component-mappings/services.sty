@@ -1,0 +1,59 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "OTel Service Component"
+    description: "Represents an OTel service based on service.name and service.namespace"
+    identifier: "urn:stackpack:open-telemetry:otel-component-mapping:service"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'service.name' in resource.attributes"
+    vars:
+      - name: "namespace"
+        value: >-
+          resource.attributes['service.namespace'] != '' ?
+          resource.attributes['service.namespace'] :
+          'default'
+      - name: "service"
+        value: "resource.attributes['service.name']"
+      - name: "version"
+        value: >-
+          'service.version' in resource.attributes ?
+          resource.attributes['service.version'] :
+          'undefined'
+      - name: "clusterName"
+        value: "resource.attributes['k8s.cluster.name']"
+    output:
+      identifier: >-
+        'urn:opentelemetry:namespace/' + vars.namespace + ':service/' + vars.service
+      name: "vars.service"
+      typeName: "'otel service'"
+      required:
+        version: "vars.version"
+        tags:
+          - source: "'open-telemetry'"
+            target: "stackpack"
+          - source: "vars.service"
+            target: "service.name"
+          - source: "vars.namespace"
+            target: "service.namespace"
+          - source: "vars.version"
+            target: "service.version"
+          - source: "vars.clusterName"
+            target: "cluster-name"
+          - source: "resource.attributes"
+            pattern: "telemetry.sdk\\.(.*)"
+            target: "telemetry.sdk.${1}"
+      optional:
+        tags:
+          - source: "resource.attributes['deployment.environment']"
+            target: "deployment-environment"
+          - source: "vars.clusterName + '/' + resource.attributes['k8s.namespace.name']"
+            target: "k8s-scope"
+          - source: "resource.attributes['k8s.namespace.name']"
+            target: "namespace"
+    expireAfter: 900000
+    rank:
+      specificity: 200

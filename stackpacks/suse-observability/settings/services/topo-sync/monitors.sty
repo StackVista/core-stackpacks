@@ -1,0 +1,115 @@
+nodes:
+  - _type: "Monitor"
+    name: "Topology Sync - latency too high"
+    tags:
+      - jvm
+      - suse-observability
+      - topo-sync
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-topo-sync-latency-too-high
+    status: "ENABLED"
+    description: "Monitors the latency of the topology sync and goes to a DEVIATING state when it is too high. Latency is measured from time of collection to commit of the data"
+    arguments:
+      comparator: GT
+      titleTemplate: "Topology Sync - latency too high - ${integration_type}"
+      failureState: DEVIATING
+      threshold: 45.000000
+      metric:
+        query: |-
+          max by (cluster_name, namespace, pod_name, integration_type)(stackstate_stackstate_sync_stage_latency_seconds_quantile{start_stage="source", end_stage="commit", quantile="1.0"})
+        aliasTemplate: "${integration_type} latency"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/topo-sync/latency.md.hbs
+
+  - _type: "Monitor"
+    name: "Topology Sync - high processing time"
+    tags:
+      - suse-observability
+      - topo-sync
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-topo-sync-high-processing-time-per-message
+    status: "ENABLED"
+    description: "Monitors the average processing time and goes to a DEVIATING state when it is considered too high. Processing time is measured from receiver to commit of the data."
+    arguments:
+      comparator: GT
+      threshold: 30.0
+      failureState: DEVIATING
+      metric:
+        query: max by (cluster_name, namespace, pod_name, integration_type)(stackstate_stackstate_sync_stage_latency_seconds_quantile{start_stage="enterReceiver", end_stage="commit", quantile="1.0"})
+        aliasTemplate: "${integration_type} processing time"
+        unit: s
+      titleTemplate: "Topology Sync - high processing time - ${integration_type}"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/topo-sync/internal-latency.md.hbs
+
+  - _type: "Monitor"
+    name: "Topology Sync - Sync Workers blocked"
+    tags:
+      - suse-observability
+      - topo-sync
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-topo-sync-workers-blocked
+    status: "ENABLED"
+    description: "Monitors the total time for the sync workers have not been processing any messages due to an error."
+    arguments:
+      comparator: GT
+      titleTemplate: "Topology Sync - Workers blocked - ${worker_name}"
+      failureState: "CRITICAL"
+      threshold: 180
+      metric:
+        query: |-
+          max by (worker_name, pod_name, namespace, cluster_name)(last_over_time(stackstate_stackstate_sync_blocked_duration_seconds{}[5m]))
+        aliasTemplate: "${worker_name} blockage"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/topo-sync/blocked.md.hbs
+
+  - _type: "Monitor"
+    name: "Topology Sync - SnapshotDataFromMultipleHosts error"
+    tags:
+      - suse-observability
+      - topo-sync
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-topo-sync-snapshot-data-multiple-hosts
+    status: "ENABLED"
+    description: "Monitors whether snapshot data for a single synchronization is coming from multiple hosts."
+    arguments:
+      comparator: GT
+      titleTemplate: "Topology Sync - SnapshotDataFromMultipleHosts - ${name}"
+      failureState: DEVIATING
+      threshold: 0
+      metric:
+        query: |-
+          max by (name, pod_name, namespace, cluster_name)(rate(stackstate_stackstate_sync_extTopo_batch_errors{category="SnapshotDataFromMultipleHosts"}[5m]))
+        aliasTemplate: "${name} SnapshotDataFromMultipleHosts errors"
+        unit: ops/sec (ops)
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/topo-sync/multiple-hosts.md.hbs
+
+  - _type: "Monitor"
+    name: "Topology Sync - SnapshotAlreadyOpen error"
+    tags:
+      - suse-observability
+      - topo-sync
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-topo-sync-snapshot-already-open
+    status: "ENABLED"
+    description: "Monitors whether snapshots are properly closed."
+    arguments:
+      comparator: GT
+      titleTemplate: "Topology Sync - SnapshotAlreadyOpen - ${name}"
+      failureState: DEVIATING
+      threshold: 0
+      metric:
+        query: |-
+          max by (name, pod_name, namespace, cluster_name)(stackstate_stackstate_sync_extTopo_batch_errors{category="SnapshotAlreadyOpen"}[5m]) > 0
+        aliasTemplate: "${name} SnapshotAlreadyOpen errors"
+        unit: ops
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/topo-sync/snapshot-already-open.md.hbs

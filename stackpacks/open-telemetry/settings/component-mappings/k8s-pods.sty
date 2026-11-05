@@ -1,0 +1,46 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Kubernetes Pod"
+    description: "Represents a Kubernetes Pod"
+    identifier: "urn:stackpack:open-telemetry:otel-component-mapping:pod"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: >-
+          'k8s.cluster.name' in resource.attributes &&
+          'k8s.namespace.name' in resource.attributes &&
+          'k8s.pod.name' in resource.attributes
+    vars:
+      - name: "clusterName"
+        value: "resource.attributes['k8s.cluster.name']"
+      - name: "namespaceName"
+        value: "resource.attributes['k8s.namespace.name']"
+      - name: "podName"
+        value: "resource.attributes['k8s.pod.name']"
+    output:
+      identifier: >-
+        'urn:opentelemetry:kubernetes:/' + vars.clusterName + ':' + vars.namespaceName + ':pod/' + vars.podName
+      name: "vars.podName"
+      typeName: "'pod'"
+      required:
+        additionalIdentifiers:
+          - "'urn:kubernetes:/' + vars.clusterName + ':' + vars.namespaceName + ':pod/' + vars.podName"
+        tags:
+          - source: "'open-telemetry'"
+            target: "stackpack"
+          - source: "vars.clusterName"
+            target: "cluster-name"
+          - source: "vars.namespaceName"
+            target: "namespace"
+          - source: "vars.clusterName + '/' + vars.namespaceName"
+            target: "k8s-scope"
+      optional:
+        tags:
+          - source: "resource.attributes['deployment.environment']"
+            target: "deployment-environment"
+    expireAfter: 900000
+    rank:
+      specificity: 120

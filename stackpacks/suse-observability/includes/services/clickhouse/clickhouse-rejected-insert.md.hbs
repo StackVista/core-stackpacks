@@ -1,0 +1,5 @@
+ClickHouse has INSERT statements that are rejected due to high number of active data parts for partition in a MergeTree,
+please decrease INSERT frequency:
+- [MergeTreeArchitecture](https://clickhouse.com/docs/en/development/architecture/#merge-tree)
+- [system.part_log](https://clickhouse.com/docs/en/operations/system-tables/part_log)
+- [system.merge_tree_settings](https://clickhouse.com/docs/en/operations/system-tables/merge_tree_settings)

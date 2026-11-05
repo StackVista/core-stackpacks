@@ -1,0 +1,342 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability deployments"
+    description: "ComponentPresentation for SUSE Observability Deployments"
+    identifier: urn:stackpack:suse-observability:component-presentation:deployments
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/part-of:stackstate", "app.kubernetes.io/part-of:stackstate-k8s", "app.kubernetes.io/name:suse-observability", "app.kubernetes.io/part-of:suse-observability") and type in ("deployment", "statefulset")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: jvm
+            title: JVM
+            order: 100
+            sections:
+              -
+                sectionId: gc
+                title: GC
+                order: 100
+                metrics:
+                  - metricId: sts-java-gc-count-deployments
+                  - metricId: java-gc-duration-deployments
+                  - metricId: java-gc-total-deployments
+                  - metricId: agent-otel-jvm-gc-durations-95th-quantile-deployments
+                  - metricId: agent-otel-jvm-gc-per-second-deployments
+                  - metricId: agent-otel-jvm-mem-after-last-gc-deployments
+              -
+                sectionId: memory
+                title: Memory
+                order: 90
+                metrics:
+                  - metricId: sts-java-heap-memory-deployments
+                  - metricId: sts-java-nonheap-memory-deployments
+                  - metricId: agent-otel-jvm-heap-memory-deployments
+                  - metricId: agent-otel-jvm-non-heap-memory-deployments
+              -
+                sectionId: threads
+                title: Threads
+                order: 80
+                metrics:
+                  - metricId: sts-java-threads-deployments
+    metrics:
+      -
+        metricId: java-gc-duration-deployments
+        description: 'Java GC duration'
+        name: Java GC Duration
+        metricQueries:
+          - expression: |-
+              max by (gc, pod_name, cluster_name, namespace) (rate(stackstate_jvm_gc_collection_seconds_sum{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]) / rate(stackstate_jvm_gc_collection_seconds_count{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: ${gc} - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: java-gc-total-deployments
+        description: 'Java total GC'
+        name: Java GC Total
+        metricQueries:
+          - expression: |-
+              max by (gc, pod_name, cluster_name, namespace) (rate(stackstate_jvm_gc_collection_seconds_sum{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: ${gc} - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-java-gc-count-deployments
+        description: 'Java GCs/s'
+        name: Java GC count
+        metricQueries:
+          - expression: |-
+              max by (gc, pod_name, cluster_name, namespace) (rate(stackstate_jvm_gc_collection_seconds_count{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: ${gc} - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: sts-java-heap-memory-deployments
+        description: 'Java Heap Memory'
+        name: Java Heap Memory
+        metricQueries:
+          - expression: |-
+              max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_used_bytes{
+                area="heap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])) or max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_bytes_used{
+                area="heap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Used - ${pod_name}
+          - expression: |-
+              max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_max_bytes{
+                area="heap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])) or max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_bytes_max{
+                area="heap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Max - ${pod_name}
+          - expression: |-
+              max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_committed_bytes{
+                area="heap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])) or max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_bytes_committed{
+                area="heap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Committed - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes
+      -
+        metricId: sts-java-nonheap-memory-deployments
+        description: 'Java Non-Heap Memory'
+        name: Java Non-Heap Memory
+        metricQueries:
+          - expression: |-
+              max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_used_bytes{
+                area="nonheap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])) or max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_bytes_used{
+                area="nonheap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Used - ${pod_name}
+          - expression: |-
+              max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_max_bytes{
+                area="nonheap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])) or max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_bytes_max{
+                area="nonheap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Max - ${pod_name}
+          - expression: |-
+              max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_committed_bytes{
+                area="nonheap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])) or max by (pod_name, cluster_name, namespace) (max_over_time(stackstate_jvm_memory_bytes_committed{
+                area="nonheap", 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Committed - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes
+      -
+        metricId: sts-java-threads-deployments
+        description: 'Java Threads'
+        name: Java Threads
+        metricQueries:
+          - expression: |-
+              sum by (pod_name, namespace, cluster_name) (max_over_time(stackstate_jvm_threads_current{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Current - ${pod_name}
+          - expression: |-
+              sum by (pod_name, namespace, cluster_name) (max_over_time(stackstate_jvm_threads_current{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Peak - ${pod_name}
+          - expression: |-
+              sum by (pod_name, namespace, cluster_name) (max_over_time(stackstate_jvm_threads_deadlocked{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Deadlocked - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: agent-otel-jvm-gc-durations-95th-quantile-deployments
+        description: 'GC operations that are slower than 95% of total gc operations.'
+        name: JVM GC Durations 95th Quantile
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.95, (rate(stackstate_jvm_gc_duration_seconds_bucket{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])))
+            alias: GC Name - ${jvm_gc_name} - pod - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: agent-otel-jvm-gc-per-second-deployments
+        description: 'Garbage collections per second.'
+        name: JVM GC Per Second
+        metricQueries:
+          - expression: |-
+              rate(stackstate_jvm_gc_duration_seconds_count{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}])
+            alias: GC Name - ${jvm_gc_name} - pod - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        metricId: agent-otel-jvm-mem-after-last-gc-deployments
+        description: 'JVM memory size after last garbage collection.'
+        name: JVM Mem After Last GC
+        metricQueries:
+          - expression: |-
+              stackstate_jvm_memory_used_after_last_gc_bytes{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }
+            alias: Memory Pool - ${jvm_memory_pool_name} - pod - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: agent-otel-jvm-heap-memory-deployments
+        description: 'JVM heap memory.'
+        name: JVM Heap Memory
+        metricQueries:
+          - expression: |-
+              stackstate_jvm_memory_used_bytes{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                jvm_memory_type="heap"
+              }
+            alias: Memory Pool - ${jvm_memory_pool_name} - pod - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)
+      -
+        metricId: agent-otel-jvm-non-heap-memory-deployments
+        description: 'JVM Non-Heap memory.'
+        name: JVM Non-Heap Memory
+        metricQueries:
+          - expression: |-
+              stackstate_jvm_memory_used_bytes{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                jvm_memory_type="non_heap"
+              }
+            alias: Memory Pool - ${jvm_memory_pool_name} - pod - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes(IEC)

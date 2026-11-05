@@ -1,0 +1,14 @@
+ClickHouse increase DataAfterMergeDiffersFromReplica in `system.events` table.
+It mean Data after merge is not byte-identical to data on another replicas.
+There could be several reasons:
+- Using newer version of compression library after server update.
+- Using another compression method.
+- Non-deterministic compression algorithm (highly unlikely).
+- Non-deterministic merge algorithm due to logical error in code.
+- Data corruption in memory due to bug in code.
+- Data corruption in memory due to hardware issue.
+- Manual modification of source data after server startup.
+- Manual modification of checksums stored in ZooKeeper.
+- Part format related settings like 'enable_mixed_granularity_parts' are different on different replicas.
+
+Server will download merged part from replica to force byte-identical result.

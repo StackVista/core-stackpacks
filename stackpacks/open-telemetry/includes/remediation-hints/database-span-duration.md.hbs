@@ -1,0 +1,12 @@
+SUSE Observability has detected that this service has a 95th percentile span duration above {{threshold}}s for spans.
+This signals that a significant number of users are experiencing a slow service.
+
+Take the following steps to diagnose the problem:
+
+## Possible causes
+
+- Load on the database has increased
+
+### Load on the database has increased
+
+Check if the number of requests to the database has increased by looking at the "Span rate" chart on the [database highlight page](/#/components/{{ componentUrnForUrl }}). If so, a quick fix can be to give the database more resources like CPU and memory.

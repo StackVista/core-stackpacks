@@ -1,0 +1,45 @@
+nodes:
+  - _type: "Monitor"
+    name: "Elasticsearch data ingestion latency"
+    tags:
+      - kafka-to-es
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-es-data-ingestion-latency
+    status: "ENABLED"
+    description: "Critical state when the ingestion latency is too high. The latency includes the time taken from producing the data to it being received on the SUSE Observability api."
+    arguments:
+      comparator: GT
+      failureState: "DEVIATING"
+      titleTemplate: "Elasticsearch ingestion latency for ${data_type}"
+      threshold: 120.0
+      metric:
+        query: |-
+          histogram_quantile(0.98, sum by (cluster_name, namespace, pod_name, data_type, le)(rate(stackstate_stackstate_kafka2es_data_latency_seconds_bucket{}[5m])))
+        aliasTemplate: "${data_type} latency"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/kafka-to-es/latency.md.hbs
+  - _type: "Monitor"
+    name: "Elasticsearch data processing latency"
+    tags:
+      - kafka-to-es
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:java-es-data-processing-latency
+    status: "ENABLED"
+    description: "Critical state when the processing latency is too high. The latency is measured from the time the data is received until it is stored in Elasticsearch."
+    arguments:
+      comparator: GT
+      titleTemplate: "Elasticsearch processing latency for ${data_type}"
+      failureState: "DEVIATING"
+      threshold: 30.0
+      metric:
+        query: |-
+          histogram_quantile(0.98, sum by (cluster_name, namespace, pod_name, data_type, le)(rate(stackstate_stackstate_kafka2es_received_data_latency_seconds_bucket{}[5m])))
+        aliasTemplate: "${data_type} latency"
+        unit: s
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/kafka-to-es/latency.md.hbs

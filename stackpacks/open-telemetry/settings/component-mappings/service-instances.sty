@@ -1,0 +1,58 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "OTel Service Instance"
+    description: "Represents an instance of an OTel service"
+    identifier: "urn:stackpack:open-telemetry:otel-component-mapping:service-instance"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'service.instance.id' in resource.attributes"
+    vars:
+      - name: "namespace"
+        value: "resource.attributes['service.namespace']"
+      - name: "service"
+        value: "resource.attributes['service.name']"
+      - name: "version"
+        value: >-
+          'service.version' in resource.attributes ?
+          resource.attributes['service.version'] :
+          'undefined'
+      - name: "instanceId"
+        value: "resource.attributes['service.instance.id']"
+      - name: "instanceName"
+        value: "resource.attributes['service.name'] + ' - ' + resource.attributes['service.instance.id']"
+      - name: "clusterName"
+        value: "resource.attributes['k8s.cluster.name']"
+    output:
+      identifier: >-
+        'urn:opentelemetry:namespace/' + vars.namespace + ':service/' + vars.service + ':serviceInstance/' + vars.instanceId
+      name: "vars.instanceName"
+      typeName: "'otel service instance'"
+      required:
+        version: "vars.version"
+        tags:
+          - source: "'open-telemetry'"
+            target: "stackpack"
+          - source: "vars.service"
+            target: "service.name"
+          - source: "vars.namespace"
+            target: "service.namespace"
+          - source: "vars.clusterName"
+            target: "cluster-name"
+          - source: "resource.attributes"
+            pattern: "(.*)"
+            target: "${1}"
+      optional:
+        tags:
+          - source: "resource.attributes['deployment.environment']"
+            target: "deployment-environment"
+          - source: "vars.clusterName + '/' + resource.attributes['k8s.namespace.name']"
+            target: "k8s-scope"
+          - source: "resource.attributes['k8s.namespace.name']"
+            target: "namespace"
+    expireAfter: 900000
+    rank:
+      specificity: 210

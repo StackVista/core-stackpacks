@@ -1,0 +1,51 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Kubernetes Custom Resource"
+    description: "Represents a CR instance of a CRD in a Kubernetes cluster"
+    identifier: "urn:stackpack:otel-k8s-crd:otel-component-mapping:custom-resource"
+    input:
+      signal:
+        - "LOGS"
+      resource:
+        scope:
+          log:
+            action: "log.body['type'] in ['ADDED', 'MODIFIED'] ? 'CREATE' : log.body['type'] == 'DELETED' ? 'DELETE' : 'CONTINUE'"
+            condition: log.eventName == 'KubernetesCustomResourceEvent'
+    vars:
+      - name: "clusterName"
+        value: "resource.attributes['k8s.cluster.name']"
+      - name: "kind"
+        value: "log.attributes['k8s.resource.kind']"
+      - name: "group"
+        value: "log.attributes['k8s.resource.group']"
+      - name: "name"
+        value: "log.attributes['k8s.object.name']"
+      - name: "namespace"
+        value: "'k8s.namespace.name' in log.attributes ? log.attributes['k8s.namespace.name'] : ''"
+    output:
+      identifier: "'urn:k8s:cr:/cluster/' + vars.clusterName + ':namespace/' + vars.namespace + ':group/' + vars.group + ':kind/' + vars.kind + ':name/' + vars.name"
+      name: "vars.name"
+      typeName: "'custom resource'"
+      required:
+        configuration: "omit(log.body['object'], ['status', 'metadata'])"
+        tags:
+          - source: "'otel-k8s-crd'"
+            target: "stackpack"
+          - source: "vars.kind"
+            target: "k8s.resource.kind"
+          - source: "vars.group"
+            target: "k8s.resource.group"
+          - source: "vars.name"
+            target: "k8s.resource.name"
+          - source: "vars.clusterName"
+            target: "cluster-name"
+      optional:
+        status: "log.body['object']['status']"
+        tags:
+          - source: "vars.namespace"
+            target: "namespace"
+          - source: "log.body['object']['metadata']['creationTimestamp']"
+            target: "k8s.creationTimestamp"
+    expireAfter: 900000
+    rank:
+      specificity: 100

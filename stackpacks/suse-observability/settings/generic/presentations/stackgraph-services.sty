@@ -1,0 +1,85 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Stackgraph services"
+    title: "SUSE Observability Stackgraph services"
+    description: "ComponentPresentation for SUSE Observability Stackgraph services"
+    identifier: urn:stackpack:suse-observability:component-presentation:stackgraph-services
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("stackstate.com/connects-to-stackgraph:true") and type in ("deployment", "service")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: stackgraph
+                title: StackGraph
+                order: 100
+                metrics:
+                  - metricId: sts-stackgraph-deployment-read-cache-utilization
+                  - metricId: sts-stackgraph-deployment-transaction-duration
+                  - metricId: sts-stackgraph-deployment-read-cache-survival-time
+    metrics:
+      -
+        metricId: sts-stackgraph-deployment-read-cache-utilization
+        description: 'ReadCache space utilization'
+        name: ReadCache space utilization
+        metricQueries:
+          - expression: |-
+              sum by (pod_name) (stackstate_stackgraph_readcache_size_bytes{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              })
+            alias: Used ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes
+      -
+        metricId: sts-stackgraph-deployment-transaction-duration
+        description: 'StackGraph transaction duration'
+        name: StackGraph transaction duration
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackgraph_transaction_duration_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }))
+            alias: Used ${pod_name} - ${name}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-stackgraph-deployment-read-cache-survival-time
+        description: 'ReadCache entry survival time'
+        name: ReadCache entry survival time
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.50, (sum by (pod_name, le) (rate(stackstate_stackgraph_readcache_retention_time_ms{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[20m])) or sum by (pod_name, le) (rate(stackstate_stackgraph_readcache_retention_time_ms_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[20m]))))
+            alias: .5 quantile - ${pod_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: ms

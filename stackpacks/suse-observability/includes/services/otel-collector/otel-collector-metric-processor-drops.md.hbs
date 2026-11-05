@@ -1,0 +1,18 @@
+`stackstate_otelcol_processor_dropped_metric_points` metric in your OpenTelemetry collector indicates that metric points
+are being dropped by processors within your OpenTelemetry collector before they can be exported.
+
+Potential Reasons:
+- Processor Configuration:
+  - **Incorrect configuration**: Double-check your processor configuration for errors like typos, invalid parameters, or incorrect filtering rules.
+  - **Disabled processor**: Ensure the relevant processor is enabled and not accidentally commented out.
+  - **Memory limits**: Some processors have memory limits for storing processed data. If exceeded, metric points might be dropped.
+- Resource Limitations:
+  - **Processor overload**: If the processor is overloaded with processing tasks, it might drop metric points to avoid resource exhaustion. Monitor CPU and memory usage of the collector by checking `Metrics` tab.
+  - **Queue overflows**: Check related metrics like `stackstate_otelcol_processor_queue_size` and `stackstate_otelcol_processor_queue_capacity`. If the queue is constantly full, metric points might be dropped due to lack of space.
+- Metric Point Data Issues:
+  - **Invalid format**: Ensure the format of your metric points (e.g., Prometheus format) adheres to the processor's requirements.
+  - **Data type mismatches**: Check if the data types of your metric points (e.g., gauge, counter) match what the processor expects.
+- Other Potential Causes:
+  - **Bugs in the processor**: While less likely, consider checking for known issues or bugs in the specific processor you're using.
+
+You may find more details by checking [logs](/#/components/{{ componentUrnForUrl }}#logs).

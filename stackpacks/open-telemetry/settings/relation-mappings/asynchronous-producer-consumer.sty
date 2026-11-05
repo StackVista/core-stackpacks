@@ -1,0 +1,40 @@
+nodes:
+  - _type: "OtelRelationMapping"
+    name: "OTel Async Relation (Producer -> Consumer)"
+    description: "Creates a direct asynchronous relation from producer to consumer"
+    identifier: "urn:stackpack:open-telemetry:otel-relation-mapping:asynchronous-producer-consumer"
+    input:
+      signal:
+        - "METRICS"
+      resource:
+        scope:
+          condition: "scope.name == 'traces_service_graph'"
+          metric:
+            condition: "metric.name == 'traces_service_graph_request_total'"
+            datapoint:
+              action: "'CREATE'"
+              condition: >-
+                'client' in datapoint.attributes &&
+                'server' in datapoint.attributes &&
+                'client_service.namespace' in datapoint.attributes &&
+                'server_service.namespace' in datapoint.attributes &&
+                'connection_type' in datapoint.attributes &&
+                datapoint.attributes['connection_type'] == 'messaging_system' &&
+                !('client_peer.service' in datapoint.attributes)
+    vars:
+      - name: "sourceId"
+        value: >-
+          'client_service.instance.id' in datapoint.attributes ?
+          "urn:opentelemetry:namespace/" + datapoint.attributes['client_service.namespace'] + ":service/" + datapoint.attributes['client'] + ":serviceInstance/" + datapoint.attributes['client_service.instance.id'] :
+          "urn:opentelemetry:namespace/" + datapoint.attributes['client_service.namespace'] + ":service/" + datapoint.attributes['client'] + ":serviceInstance/" + datapoint.attributes['client']
+      - name: "targetId"
+        value: >-
+          'server_service.instance.id' in datapoint.attributes ?
+          "urn:opentelemetry:namespace/" + datapoint.attributes['server_service.namespace'] + ":service/" + datapoint.attributes['server'] + ":serviceInstance/" + datapoint.attributes['server_service.instance.id'] :
+          "urn:opentelemetry:namespace/" + datapoint.attributes['server_service.namespace'] + ":service/" + datapoint.attributes['server'] + ":serviceInstance/" + datapoint.attributes['server']
+    output:
+      sourceId: "vars.sourceId"
+      targetId: "vars.targetId"
+      typeName: "'asynchronous'"
+      dependencyType: "'CONNECTION'"
+    expireAfter: 900000

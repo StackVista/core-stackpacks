@@ -1,0 +1,23 @@
+nodes:
+  - _type: "Monitor"
+    name: "HBase slow gets"
+    tags:
+      - suse-observability
+      - hbase
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-hbase-slow-get-count
+    status: "ENABLED"
+    description: "Monitors the amount of slow get counts."
+    arguments:
+      comparator: GT
+      titleTemplate: "HBase - slow get count"
+      failureState: "DEVIATING"
+      threshold: 0
+      metric:
+        query: |-
+          sum by (cluster_name, namespace, pod_name)(rate(stackstate_hbase_slowgetcount{}[5m]))
+        aliasTemplate: "slow get count"
+        unit: ops/sec (ops)
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include services/hbase/slow-gets.md.hbs

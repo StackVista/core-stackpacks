@@ -1,0 +1,8 @@
+VictoriaMetrics has switched to read-only mode and is no longer accepting writes. Metrics sent while this lasts are lost once the upstream queues fill.
+
+This is almost always free disk space falling below `-storage.minFreeDiskSpaceBytes`. Check:
+
+- the `Volume usage` panel on the *Metrics processing* dashboard, and the `Disk runs out of space` monitors
+- `stackstate_vm_free_disk_space_bytes` against `stackstate_vm_free_disk_space_limit_bytes` for this pod
+
+To recover, free space or grow the volume. Reducing retention releases space only after the next merge, so it is not an immediate fix.

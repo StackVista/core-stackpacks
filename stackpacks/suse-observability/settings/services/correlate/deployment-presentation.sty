@@ -1,0 +1,277 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Correlate"
+    description: "ComponentPresentation for SUSE Observability Correlate"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-correlate-deployment
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:correlate") and type in ("service", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: backup
+                title: Correlate Performance
+                order: 100
+                metrics:
+                  - metricId: sts-correlate-deployment-total-observations
+                  - metricId: sts-correlate-deployment-internal-latency
+              -
+                sectionId: backup
+                title: Correlate Produced
+                order: 90
+                metrics:
+                  - metricId: sts-correlate-deployment-approximate-count-of-elements-produced
+                  - metricId: sts-correlate-deployment-approximate-count-of-elements-produced-hour
+              -
+                sectionId: backup
+                title: Correlate Details
+                order: 80
+                metrics:
+                  - metricId: sts-correlate-deployment-buffers-occupancy
+                  - metricId: sts-correlate-deployment-http-trace-observations
+                  - metricId: sts-correlate-deployment-connection-observations
+                  - metricId: sts-correlate-deployment-http-trace-observations-cluster
+                  - metricId: sts-correlate-deployment-connection-observations-cluster
+    metrics:
+      -
+        metricId: sts-correlate-deployment-total-observations
+        name: SUSE Observability Correlate - total observations
+        description: Total observations at the correlator
+        metricQueries:
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_http_observations_added_to_state{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Http
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_endpoints_added_to_state{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Connections
+        chart:
+          _type: TimeSeriesChart
+          unit: ops
+      -
+        metricId: sts-correlate-deployment-internal-latency
+        description: 'Correlate Internal Latency per data type measured from reception time to correlation finished'
+        name: Stackstate Correlate - Internal Latency
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, sum by (data_type, le) (rate(stackstate_stackstate_correlate_received_data_latency_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              })))
+            alias: Latency to ${data_type}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-correlate-deployment-approximate-count-of-elements-produced
+        name: SUSE Observability Correlate - Approximate count of elements produced
+        description: Amount of elements produced in the correlator
+        metricQueries:
+          - expression: |-
+              sum by (element_type) (avg_over_time(stackstate_stackstate_correlate_unique_active_element_approx_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__interval}]))
+            alias: "${element_type}"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-correlate-deployment-approximate-count-of-elements-produced-hour
+        name: SUSE Observability Correlate - Approximate count of created elements in the last hour
+        description: Approximate count of new elements create in the past hour
+        metricQueries:
+          - expression: |-
+              sum by (element_type) (avg_over_time(stackstate_stackstate_correlate_element_create_approx_count{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__interval}]))
+            alias: "${element_type}"
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-correlate-deployment-buffers-occupancy
+        name: SUSE Observability Correlate - buffers occupancy
+        description: Amount of elements produced in the correlator
+        metricQueries:
+          - expression: |-
+              sum by (correlation_type) (avg_over_time(stackstate_stackstate_correlate_buffer_occupancy{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__interval}]))
+            alias: "${correlation_type}"
+        chart:
+          _type: TimeSeriesChart
+          unit: percentunit
+      -
+        metricId: sts-correlate-deployment-http-trace-observations
+        name: SUSE Observability HTTP Correlate - bservation correlation
+        description: HTTP Trace observations received and processing results
+        metricQueries:
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_http_observations_added_to_state{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Total
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_http_observations_correlated{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Correlated
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_http_observations_uncorrelated{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Uncorrelated
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_http_observations_subsumed{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Subsumed
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_http_observations_data_dropped{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Dropped
+        chart:
+          _type: TimeSeriesChart
+          unit: ops
+      -
+        metricId: sts-correlate-deployment-connection-observations
+        name: SUSE Observability Connection Correlate - observation correlation
+        description: Layer 4 connection observations received and processing results
+        metricQueries:
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_endpoints_added_to_state{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Total
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_endpoints_correlated{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Correlated
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_endpoints_uncorrelated{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Uncorrelated
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_endpoints_data_dropped{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Dropped
+          - expression: |-
+              sum(rate(stackstate_stackstate_correlate_ambiguous_endpoints{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: Ambiguous
+        chart:
+          _type: TimeSeriesChart
+          unit: ops
+      -
+        metricId: sts-correlate-deployment-http-trace-observations-cluster
+        name: SUSE Observability HTTP Correlations - per cluster
+        description: HTTP Trace observations received and processing results
+        metricQueries:
+          - expression: |-
+              sum by (agent_cluster) (rate(stackstate_stackstate_correlate_http_observations_added_to_state{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: "${agent_cluster}"
+        chart:
+          _type: TimeSeriesChart
+          unit: ops
+      -
+        metricId: sts-correlate-deployment-connection-observations-cluster
+        name: SUSE Observability Connection Correlate - per cluster
+        description: Layer 4 connection observations received and processing results
+        metricQueries:
+          - expression: |-
+              sum by (agent_cluster) (rate(stackstate_stackstate_correlate_endpoints_added_to_state{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_name="${tags.singleValue('app.kubernetes.io/name')}",
+                kube_app_instance="${tags.singleValue('app.kubernetes.io/instance')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}"
+              }[${__rate_interval}]))
+            alias: "${agent_cluster}"
+        chart:
+          _type: TimeSeriesChart
+          unit: ops

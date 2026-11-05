@@ -1,0 +1,49 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Kubernetes Custom Resource Definition"
+    description: "Represents a CRD installed in a Kubernetes cluster"
+    identifier: "urn:stackpack:otel-k8s-crd:otel-component-mapping:custom-resource-definition"
+    input:
+      signal:
+        - "LOGS"
+      resource:
+        scope:
+          log:
+            action: "log.body['type'] in ['ADDED', 'MODIFIED'] ? 'CREATE' : log.body['type'] == 'DELETED' ? 'DELETE' : 'CONTINUE'"
+            condition: log.eventName == 'KubernetesCustomResourceDefinitionEvent'
+    vars:
+      - name: "clusterName"
+        value: "resource.attributes['k8s.cluster.name']"
+      - name: "name"
+        value: "log.attributes['k8s.object.name']"
+      - name: "group"
+        value: "log.attributes['k8s.resource.group']"
+      - name: "kind"
+        value: "log.attributes['k8s.resource.kind']"
+      - name: "customResourcesWatched"
+        value: "'k8s.crd.custom_resources_watched' in log.attributes && log.attributes['k8s.crd.custom_resources_watched'] ? 'Yes' : 'No'"
+    output:
+      identifier: "'urn:k8s:crd:/cluster/' + vars.clusterName + ':group/' + vars.group + ':kind/' + vars.kind"
+      name: "vars.name"
+      typeName: "'custom resource definition'"
+      required:
+        configuration: "log.body['object']['spec']"
+        tags:
+          - source: "'otel-k8s-crd'"
+            target: "stackpack"
+          - source: "vars.group"
+            target: "k8s.crd.group"
+          - source: "vars.kind"
+            target: "k8s.crd.kind"
+          - source: "vars.clusterName"
+            target: "cluster-name"
+          - source: "vars.customResourcesWatched"
+            target: "k8s.crd.custom_resources_watched"
+      optional:
+        status: "log.body['object']['status']"
+        tags:
+          - source: "log.body['object']['metadata']['creationTimestamp']"
+            target: "k8s.creationTimestamp"
+    expireAfter: 900000
+    rank:
+      specificity: 100

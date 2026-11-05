@@ -1,0 +1,21 @@
+nodes:
+  - _type: Monitor
+    arguments:
+      comparator: GT
+      failureState: DEVIATING
+      metric:
+        query: 'sum by(service_namespace, service_name)(rate(otel_span_calls_total{status_code="STATUS_CODE_ERROR", span_kind=~"SPAN_KIND_SERVER|SPAN_KIND_CONSUMER"}[5m]) or (present_over_time(otel_span_calls_total{span_kind=~"SPAN_KIND_SERVER|SPAN_KIND_CONSUMER"}[5m]) -1)) / sum by(service_namespace, service_name)(rate(otel_span_calls_total{span_kind=~"SPAN_KIND_SERVER|SPAN_KIND_CONSUMER"}[5m])) * 100'
+        aliasTemplate: Error ratio (errors/total)
+        unit: percent
+      threshold: 5
+      titleTemplate: Span error ratio
+      urnTemplate: "urn:opentelemetry:namespace/${service_namespace}:service/${service_name}"
+    description: |
+      Percentage of server and consumer spans that are in an error state for the service.
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:open-telemetry:monitor:otel-service-span-error-ratio
+    intervalSeconds: 30
+    name: Span error ratio for Open Telemetry services
+    status: ENABLED
+    tags: ["service", "traces"]
+    remediationHint: !include remediation-hints/service-span-error-ratio.md.hbs

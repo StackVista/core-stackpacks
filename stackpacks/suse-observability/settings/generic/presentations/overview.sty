@@ -1,0 +1,63 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Stackgraph overview"
+    description: "ComponentPresentation for SUSE Observability overview"
+    identifier: urn:stackpack:suse-observability:component-presentation:overview
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label in ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/part-of:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/part-of:stackstate-k8s", "app.kubernetes.io/name:suse-observability", "app.kubernetes.io/part-of:suse-observability") AND type in ("pod", "service", "deployment", "statefulset")
+    rank:
+      specificity: 10
+    presentation:
+      icon: !icon suse-observability.svg
+      overview:
+        name:
+          singular: "SUSE Observability component"
+          plural: "SUSE Observability components"
+          title: "SUSE Observability"
+        mainMenu:
+          group: "SUSE Observability"
+          order: 1
+        columns:
+          - columnId: "health"
+            title: "Health"
+            projection:
+              _type: "HealthProjection"
+              value: "healthState"
+          - columnId: "name"
+            title: "Name"
+            projection:
+              _type: "ComponentLinkProjection"
+              name: "name"
+              identifier: "identifiers[0]"
+          - columnId: "type"
+            title: "Type"
+            projection:
+              _type: "TextProjection"
+              value: "typeName"
+      topology:
+        showIndirectRelations: false
+        connectedComponents: true
+        groupedByDomains: true
+        groupedByLayers: true
+        groupedByRelations: true
+        groupingEnabled: true
+        autoGrouping: true
+        minimumGroupSize: 2
+      filters:
+        - filterId: "namespace"
+          displayName:
+            singular: "namespace"
+            plural: "namespaces"
+          filter:
+            _type: "TagFilter"
+            tagKey: "namespace"
+          moreTab: K8s
+        - filterId: "cluster"
+          displayName:
+            singular: "cluster"
+            plural: "clusters"
+          filter:
+            _type: "TagFilter"
+            tagKey: "cluster-name"
+          moreTab: K8s

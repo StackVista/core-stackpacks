@@ -1,0 +1,10 @@
+Metrics are taking longer than the freshness objective to become queryable after they are scraped, so dashboards and monitors are evaluating late data.
+
+The value is the smallest sample age seen over the last minute, which removes the normal rise between scrapes and leaves the delay through the pipeline. Check in order:
+
+- is vmagent holding data back? see the `vmagent - Write queue` panel
+- is the collector queue backing up? see the metrics export queue occupancy panel
+- is the receiver rejecting? see `Receiver - Memory limiter saturation`
+- is VictoriaMetrics slow to persist? see `VictoriaMetrics - Pending rows` and `Insert concurrency saturated`
+
+If scraping has stopped entirely this monitor fires only after about 90 seconds, and it goes quiet once the series expire. `Receiver - No data received` covers a full stop.

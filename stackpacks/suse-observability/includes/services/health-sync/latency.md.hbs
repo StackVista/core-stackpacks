@@ -1,0 +1,51 @@
+The Health Synchronization has high latency.
+
+The Health Synchronization consumes all results emmited by the monitors, persists them and links them to the corresponding topology elements.
+When the latency of the process is high we might have components missing health states or with health states not shown timely in the components.
+
+### Investigate
+Evaluate with the monitor metric chart if the deviation was caused by a burst of incoming data or if the load has consistently increased. If the high latency
+is present regularly you can consider:
+1. Add more resources to the Health Synchronization.
+
+### Add more resources to the Health Synchronization.
+1. Inspect the [Configuration](/#/components/{{ componentUrnForUrl }}#configuration) of this pod and look for the amount of requested CPU and memory.
+```
+resources:
+  limits:
+    cpu: 1000m
+    ephemeral-storage: 1Mi
+    memory: 3Gi
+  requests:
+    cpu: 750m
+    ephemeral-storage: 1Mi
+    memory: 2Gi
+```
+
+* Verify with the memory, JVM heap, JVM Gc metric charts if the pod needs more memory.
+
+
+2. Update your helm `values.yaml` to add more cpu cores.
+```
+stackstate:
+  components:
+    healthSync:
+      resources:
+        limits:
+          memory: "4500Mi"
+          cpu: "3000m"
+        requests:
+          memory: "4500Mi"
+          cpu: "2000m"
+```
+
+
+3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
+```
+helm upgrade \
+--install \
+--namespace suse-observability \
+--values values.yaml \
+suse-observability \
+suse-observability/suse-observability
+```

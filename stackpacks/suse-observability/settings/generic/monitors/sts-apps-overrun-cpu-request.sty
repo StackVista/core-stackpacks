@@ -1,0 +1,24 @@
+nodes:
+  - _type: "Monitor"
+    name: "Overrunning requested CPU"
+    tags:
+      - suse-observability
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: urn:stackpack:suse-observability:monitor:sts-apps-overrun-cpu-request
+    status: "ENABLED"
+    description: "Critical state when average CPU usage is consistently more than 100% higher than requested CPU."
+    arguments:
+      titleTemplate: "Overrunning requested CPU ${container}"
+      comparator: "GT"
+      failureState: "DEVIATING"
+      threshold: 2
+      metric:
+        query: |-
+          (sum(avg_over_time(container_cpu_usage{kube_app_name=~"stackstate|stackstate-k8s|suse-observability"}[30m])) by (pod_name, namespace, cluster_name, container) / 1000000000) / sum(avg_over_time(kubernetes_cpu_requests{kube_app_name=~"stackstate|stackstate-k8s|suse-observability"}[30m])) by (pod_name, namespace, cluster_name, container)
+          or 
+          (sum(avg_over_time(container_cpu_usage{kube_app_part_of=~"stackstate|stackstate-k8s|suse-observability"}[30m])) by (pod_name, namespace, cluster_name, container) / 1000000000) / sum(avg_over_time(kubernetes_cpu_requests{kube_app_part_of=~"stackstate|stackstate-k8s|suse-observability"}[30m])) by (pod_name, namespace, cluster_name, container)
+        unit: percentunit
+        aliasTemplate: "CPU usage as percentage of requested"
+      urnTemplate: "urn:kubernetes:/${cluster_name}:${namespace}:pod/${pod_name}"
+    intervalSeconds: 30
+    remediationHint: !include generic/sts-apps-overrun-cpu-request.md.hbs

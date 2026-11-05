@@ -1,0 +1,92 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Elasticsearch"
+    description: "ComponentPresentation for SUSE Observability Elasticsearch"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-health-sync-pod
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:health-sync", "app.kubernetes.io/component:server") and type in ("pod", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: health-sync
+                title: Health Sync
+                order: 100
+                metrics:
+                  - metricId: sts-health-sync-latency
+                  - metricId: sts-health-sync-messages-rate
+                  - metricId: sts-health-sync-operations-rate
+                  - metricId: sts-health-sync-kafka-lag
+    metrics:
+      -
+        description: 'Health Sync latency'
+        name: Health Sync Latency
+        metricId: sts-health-sync-latency
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_health_sync_latency_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: ${pod_name} - ${partition}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        description: 'Rate of all received check state messages that were received for a stream and substreams'
+        name: Health Sync Received messages rate
+        metricId: sts-health-sync-messages-rate
+        metricQueries:
+          - expression: |-
+              stackstate_stackstate_health_sync_all_check_state_message_rate{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }
+            alias: ${pod_name} - ${stream}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        description: 'Rate of all check state operations that were performed for the stream and substreams'
+        name: Health Sync Received operations rate
+        metricId: sts-health-sync-operations-rate
+        metricQueries:
+          - expression: |-
+              stackstate_health_sync_all_check_state_operation_rate{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              } > 0
+            alias: ${pod_name} - ${stream} - ${operation}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps
+      -
+        description: 'Kafka consumer lag per topic'
+        name: Health Sync Topic lag
+        metricId: sts-health-sync-kafka-lag
+        metricQueries:
+          - expression: |-
+              sum by (pod_name, topic) (stackstate_kafka_consumer_consumer_fetch_manager_metrics_records_lag{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              })
+            alias: ${pod_name} - ${topic}
+        chart:
+          _type: TimeSeriesChart
+          unit: cps

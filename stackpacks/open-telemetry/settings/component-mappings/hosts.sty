@@ -1,0 +1,31 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Host Component"
+    description: "Represents a machine host"
+    identifier: "urn:stackpack:open-telemetry:otel-component-mapping:host"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'host.id' in resource.attributes"
+    vars:
+      - name: "hostId"
+        value: "resource.attributes['host.id']"
+    output:
+      identifier: "'urn:opentelemetry:host/' + vars.hostId"
+      name: "vars.hostId"
+      typeName: "'host'"
+      required:
+        tags:
+          - source: "'open-telemetry'"
+            target: "stackpack"
+      optional:
+        tags:
+          - source: "resource.attributes"
+            pattern: "^(os|host|cloud|azure|gcp)\\.(.*)"
+            target: "${1}.${2}"
+    expireAfter: 900000
+    rank:
+      specificity: 50

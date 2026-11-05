@@ -1,0 +1,66 @@
+nodes:
+  - _type: "Monitor"
+    name: "K8s resource collector - no records emitted"
+    tags:
+      - k8s-resource-collector
+      - otel-k8s-crd
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: "urn:stackpack:suse-observability:monitor:k8s-resource-collector-no-records-emitted"
+    status: "ENABLED"
+    description: "Monitors whether the k8s resource collector is emitting CRD or CR log records."
+    arguments:
+      metric:
+        query: sum by (k8s_cluster_name, k8s_namespace_name, k8s_pod_name) (increase(receiver_k8sresource_records_emitted_total[15m]))
+        unit: "short"
+        aliasTemplate: "Records emitted in 15m"
+      comparator: LT
+      threshold: 1
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${k8s_cluster_name}:${k8s_namespace_name}:pod/${k8s_pod_name}"
+      titleTemplate: "K8s resource collector - no records emitted"
+    intervalSeconds: 300
+    remediationHint: "Check that the suse-observability-agent k8s-resource-collector pod is running, has Kubernetes API/RBAC access, and can export OTLP telemetry to SUSE Observability."
+
+  - _type: "Monitor"
+    name: "K8s resource collector - payloads dropped by budget"
+    tags:
+      - k8s-resource-collector
+      - otel-k8s-crd
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: "urn:stackpack:suse-observability:monitor:k8s-resource-collector-payloads-dropped"
+    status: "ENABLED"
+    description: "Monitors CR or Kubernetes object payloads dropped because they did not fit the configured total payload budget."
+    arguments:
+      metric:
+        query: sum by (k8s_cluster_name, k8s_namespace_name, k8s_pod_name, source, api_group, kind) (increase(receiver_k8sresource_payloads_dropped_total[5m]))
+        unit: "short"
+        aliasTemplate: "Payloads dropped in 5m"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${k8s_cluster_name}:${k8s_namespace_name}:pod/${k8s_pod_name}"
+      titleTemplate: "K8s resource collector - payloads dropped by budget"
+    intervalSeconds: 300
+    remediationHint: "Review which CRs and Kubernetes objects are being collected. Use the [Metrics Explorer](/#/metrics?metrics=%5B%5B%5B%22histogram_quantile%28%5Cn%20%200.95%2C%5Cn%20%20sum%20by%20%28le%2C%20source%2C%20api_group%2C%20kind%2C%20outcome%29%20%28%5Cn%20%20%20%20rate%28receiver_k8sresource_payload_size_bytes_bucket%7Boutcome%3D%5C%22dropped%5C%22%7D%5B5m%5D%29%5Cn%20%20%29%5Cn%29%22%5D%5D%2C%5B0%2C%5B0%2C%22bytes%22%2C6%2C%5Btrue%2C%22%22%5D%5D%5D%5D) to see the 95th percentile size of dropped payloads by source, API group, and kind. Increase `otel.k8sResourceCollector.dataLimits.maxCrTotalDataSizeBytes` or `otel.k8sResourceCollector.dataLimits.maxObjectTotalDataSizeBytes` only when larger payloads are expected and safe to forward."
+
+  - _type: "Monitor"
+    name: "K8s resource collector - informer reconcile failures"
+    tags:
+      - k8s-resource-collector
+      - otel-k8s-crd
+    function: urn:stackpack:common:monitor-function:threshold
+    identifier: "urn:stackpack:suse-observability:monitor:k8s-resource-collector-informer-reconcile-failures"
+    status: "ENABLED"
+    description: "Monitors failed informer reconciliation attempts for CR and static Kubernetes resource watches."
+    arguments:
+      metric:
+        query: sum by (k8s_cluster_name, k8s_namespace_name, k8s_pod_name, kind) (increase(receiver_k8sresource_informer_reconciles_total{outcome="failed"}[5m]))
+        unit: "short"
+        aliasTemplate: "Informer reconcile failures in 5m"
+      comparator: GT
+      threshold: 0
+      failureState: "DEVIATING"
+      urnTemplate: "urn:kubernetes:/${k8s_cluster_name}:${k8s_namespace_name}:pod/${k8s_pod_name}"
+      titleTemplate: "K8s resource collector - informer reconcile failures"
+    intervalSeconds: 300
+    remediationHint: "Check k8s-resource-collector logs and RBAC. Failed CR informer reconciliation usually means the collector cannot list/watch a discovered resource."

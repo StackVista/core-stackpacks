@@ -1,0 +1,95 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability Stackgraph pods"
+    title: "SUSE Observability Stackgraph pods"
+    description: "ComponentPresentation for SUSE Observability Stackgraph pods"
+    identifier: urn:stackpack:suse-observability:component-presentation:stackgraph-pods
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("stackstate.com/connects-to-stackgraph:true") and type in ("pod")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: stackgraph
+                title: StackGraph
+                order: 100
+                metrics:
+                  - metricId: sts-stackgraph-pod-read-cache-utilization
+                  - metricId: sts-stackgraph-pod-read-cache-survival-time
+                  - metricId: sts-stackgraph-pod-transaction-duration
+    metrics:
+      -
+        metricId: sts-stackgraph-pod-read-cache-utilization
+        description: 'ReadCache space utilization'
+        name: ReadCache space utilization
+        metricQueries:
+          - expression: |-
+              sum(stackstate_stackgraph_readcache_size_bytes{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              })
+            alias: Used
+          - expression: |-
+              sum(stackstate_stackgraph_readcache_max_size_bytes{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              })
+            alias: Max
+        chart:
+          _type: TimeSeriesChart
+          unit: bytes
+      -
+        metricId: sts-stackgraph-pod-read-cache-survival-time
+        description: 'ReadCache entry survival time'
+        name: ReadCache entry survival time
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.50, (sum by (le) (rate(stackstate_stackgraph_readcache_retention_time_ms{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[20m])) or sum by (le) (rate(stackstate_stackgraph_readcache_retention_time_ms_bucket{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[20m]))))
+            alias: 0.5 quantile
+          - expression: |-
+              histogram_quantile(0.95, (sum by (le) (rate(stackstate_stackgraph_readcache_retention_time_ms{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[20m])) or sum by (le) (rate(stackstate_stackgraph_readcache_retention_time_ms_bucket{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }[20m]))))
+            alias: 0.95 quantile
+        chart:
+          _type: TimeSeriesChart
+          unit: ms
+      -
+        metricId: sts-stackgraph-pod-transaction-duration
+        description: 'StackGraph transaction duration'
+        name: StackGraph transaction duration
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackgraph_transaction_duration_seconds_bucket{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                pod_name="${name}"
+              }))
+            alias: Used - ${name}
+        chart:
+          _type: TimeSeriesChart
+          unit: s

@@ -1,0 +1,6 @@
+ClickHouse increase ReplicatedDataLoss in `system.events` table.
+It mean data part that server wanted doesn't exist on any replica (even on replicas that are offline right now).
+That data parts are definitely lost. This is normal due to asynchronous replication (if quorum inserts were not enabled),
+when the replica on which the data part was written was failed and when it became online after fail it doesn't contain that data part.
+
+Please check [logs](/#/components/{{ componentUrnForUrl }}#logs) of the pod.

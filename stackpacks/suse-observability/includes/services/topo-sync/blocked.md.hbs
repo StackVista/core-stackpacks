@@ -1,0 +1,10 @@
+The Topology Synchronization pod uses several workers and one of them if blocked and can't resume work.
+
+### Remediation
+1. Restart the pod so the synchronization of topology data resumes.
+```
+kubectl delete pod  {{ labels.pod_name }}  -n {{ labels.namespace }}
+```
+`Restarting the pod can help by either unblocking the issue or making it more evident in the logs`
+
+2. Inspect the [Logs](/#/components/{{ componentUrnForUrl }}#logs) of the pod in order to find the root cause of the blockage.

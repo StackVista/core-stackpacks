@@ -1,0 +1,68 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "K8s CRD Common Filters"
+    description: "Common filters for Kubernetes Custom Resource components"
+    identifier: "urn:stackpack:otel-k8s-crd:component-presentation:common-filters"
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("stackpack:otel-k8s-crd")
+    rank:
+      specificity: 1
+    presentation:
+      filters:
+        - filterId: "crd_cluster"
+          displayName:
+            singular: "Cluster"
+            plural: "Clusters"
+          filter:
+            _type: "TagFilter"
+            tagKey: "cluster-name"
+          moreTab: "Kubernetes"
+        - filterId: "crd_api_group"
+          displayName:
+            singular: "API Group"
+            plural: "API Groups"
+          filter:
+            _type: "TagFilter"
+            tagKey: "k8s.crd.group"
+          moreTab: "Custom Resources"
+        - filterId: "crd_kind"
+          displayName:
+            singular: "Kind"
+            plural: "Kinds"
+          filter:
+            _type: "TagFilter"
+            tagKey: "k8s.crd.kind"
+          moreTab: "Custom Resources"
+        - filterId: "crd_custom_resources_watched"
+          displayName:
+            singular: "CRs collected"
+            plural: "CRs collected"
+          filter:
+            _type: "TagFilter"
+            tagKey: "k8s.crd.custom_resources_watched"
+          moreTab: "Custom Resources"
+        - filterId: "cr_api_group"
+          displayName:
+            singular: "API Group"
+            plural: "API Groups"
+          filter:
+            _type: "TagFilter"
+            tagKey: "k8s.resource.group"
+          moreTab: "Custom Resources"
+        - filterId: "cr_kind"
+          displayName:
+            singular: "Kind"
+            plural: "Kinds"
+          filter:
+            _type: "TagFilter"
+            tagKey: "k8s.resource.kind"
+          moreTab: "Custom Resources"
+        - filterId: "cr_namespace"
+          displayName:
+            singular: "Namespace"
+            plural: "Namespaces"
+          filter:
+            _type: "TagFilter"
+            tagKey: "namespace"
+          moreTab: "Kubernetes"

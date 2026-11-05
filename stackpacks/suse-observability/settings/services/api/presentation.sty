@@ -1,0 +1,92 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "SUSE Observability API"
+    description: "ComponentPresentation for SUSE Observability API"
+    identifier: urn:stackpack:suse-observability:component-presentation:service-api
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: label IN ("app.kubernetes.io/name:stackstate", "app.kubernetes.io/name:stackstate-k8s", "app.kubernetes.io/name:suse-observability") and label IN ("app.kubernetes.io/component:api", "app.kubernetes.io/component:server", "app.kubernetes.io/component:view-health") and type in ("pod", "deployment")
+    rank:
+      specificity: 10
+    presentation:
+      metricPerspective:
+        tabs:
+          -
+            tabId: suse-observability
+            title: SUSE Observability
+            order: 100
+            sections:
+              -
+                sectionId: topology-api
+                title: Topology API
+                order: 100
+                metrics:
+                  - metricId: sts-topology-query-duration
+                  - metricId: sts-topology-query-latency
+                  - metricId: sts-topology-query-execution-rate
+                  - metricId: sts-topology-query-timeout-rate
+    metrics:
+      -
+        metricId: sts-topology-query-duration
+        description: 'Topology Api - Duration of a query execution on the topology query service'
+        name: Topology Api Query Execution duration
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_topology_query_execute_duration_seconds_bucket{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: ${pod_name} - ${query}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topology-query-latency
+        description: 'Topology Api - Latency of a query execution on the topology query service'
+        name: Topology Api Query Execution latency
+        metricQueries:
+          - expression: |-
+              histogram_quantile(0.98, rate(stackstate_stackstate_topology_query_execute_latency_seconds_bucket{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }))
+            alias: ${pod_name} - ${query}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      -
+        metricId: sts-topology-query-execution-rate
+        description: 'Topology Api - Number of times we execute the query on the topology query service'
+        name: Topology Api Query execution rate
+        metricQueries:
+          - expression: |-
+              rate(stackstate_stackstate_topology_query_execute{ 
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[${__interval}])
+            alias: ${pod_name} - ${query}
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      -
+        metricId: sts-topology-query-timeout-rate
+        description: 'Topology Api - Number of queries that got rejected due to  the queue being full on the topology query service'
+        name: Topology Api Query timeout rate
+        metricQueries:
+          - expression: |-
+              rate(stackstate_stackstate_topology_query_timeout{
+                cluster_name="${tags.singleValue('cluster-name')}",
+                namespace="${tags.singleValue('namespace')}",
+                kube_app_component="${tags.singleValue('app.kubernetes.io/component')}",
+                kube_app_name=~"stackstate|stackstate-k8s|suse-observability"
+              }[${__interval}])
+            alias: ${pod_name} - ${query}
+        chart:
+          _type: TimeSeriesChart
+          unit: short

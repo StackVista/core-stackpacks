@@ -1,0 +1,5 @@
+ClickHouse increase `ReplicatedPartFailedFetches` in `system.events` table.
+It mean server was failed to download data part from replica of a ReplicatedMergeTree table.
+Please check following things:
+- connections between ClickHouse pod and his replicas (see remote_server section in /etc/clickhouse-server/)
+- [logs](/#/components/{{ componentUrnForUrl }}#logs) of the pod

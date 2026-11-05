@@ -1,0 +1,32 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Function Component"
+    description: "Represents a serverless function (faas)."
+    identifier: "urn:stackpack:open-telemetry:otel-component-mapping:function"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'faas.id' in resource.attributes"
+    vars:
+      - name: "faasId"
+        value: "resource.attributes['faas.id']"
+    output:
+      identifier: "'urn:opentelemetry:function/' + vars.faasId"
+      name: "vars.faasId"
+      typeName: "'function'"
+      required:
+        version: "resource.attributes['faas.version']"
+        tags:
+          - source: "'open-telemetry'"
+            target: "stackpack"
+      optional:
+        tags:
+          - source: "resource.attributes"
+            pattern: "^(faas|cloud)\\.(.*)"
+            target: "${1}.${2}"
+    expireAfter: 900000
+    rank:
+      specificity: 200

@@ -1,0 +1,19 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Otel Host Extension"
+    description: "Extends the Host presentation for OTel hosts with related service instances"
+    identifier: urn:stackpack:open-telemetry:component-presentation:host
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: (label = "source-type:host")
+    rank:
+      specificity: 10
+    presentation:
+      highlight:
+        relatedResources:
+          - resourceId: "otel_host_service_instances"
+            title: "Related service instances"
+            order: 1.0
+            topologyQuery: >-
+              type = "otel service instance" AND label = "k8s.node.name:${name}"
+            presentationIdentifier: "urn:stackpack:open-telemetry:component-presentation:service-instance"

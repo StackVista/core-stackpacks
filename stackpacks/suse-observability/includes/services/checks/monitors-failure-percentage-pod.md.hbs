@@ -1,0 +1,10 @@
+The monitor failures monitor triggers when a monitor running in SUSE Observability is failing more than expected. This will impact the
+monitor results by being late, incorrect or incomplete.
+
+## Possible solutions
+
+- Look into the logs of the pod running the monitor to understand what is causing the monitor to fail.
+- It could be SUSE observability is under provisioned. Investigate the CPU usage and throttling of the server or checks pod
+  running the monitor. If the pod is being throttled, increase CPU requests and limits. It could also be an upstream like VictoriaMetrics is throttled
+  slowing down execution of a monitor.
+- If this does not solve the issue, please contact SUSE Observability [support](https://www.stackstate.com/company/contact-us/).

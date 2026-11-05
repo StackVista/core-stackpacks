@@ -1,0 +1,9 @@
+Please analyze your workload.
+Each concurrent SELECT statements use memory in JOINs use CPU for running aggregation function and can read lot of data from disk when scan parts in partitions and utilize disk I/O.
+Each concurrent INSERT statements, allocate around 1MB per each column in an inserted table and utilize disk I/O.
+
+Look at following documentation parts:
+- https://clickhouse.com/docs/en/operations/settings/query-complexity/
+- https://clickhouse.com/docs/en/operations/quotas/
+- https://clickhouse.com/docs/en/operations/server-configuration-parameters/settings/#max-concurrent-queries
+- https://clickhouse.com/docs/en/operations/system-tables/query_log/

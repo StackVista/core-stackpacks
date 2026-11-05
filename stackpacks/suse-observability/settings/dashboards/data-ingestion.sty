@@ -1,0 +1,323 @@
+nodes:
+  - _type: Dashboard
+    identifier: urn:stackpack:suse-observability:dashboard:data-ingestion
+    name: SUSE Observability - Data ingestion
+    description: ""
+    dashboard:
+      metadata:
+        project: '{"saveVariables":false}'
+      spec:
+        panels:
+          YHvrlowP7KLrAuLWFrWBd:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: binBps
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by
+                          (local_pod_name)(rate(pod_received_bytes_count{local_pod_name=~".*-(receiver|collector)-.*",
+                          cluster_name='${cluster}', direction="incoming",
+                          intra_pod!='true',
+                          local_pod_ns='${namespace}'}[${__rate_interval}]))
+                        alias: ${local_pod_name}
+              display:
+                name: Ingested data / second
+                description: Volume of ingested data per pod. The 2 main entry points for data
+                  in the platform are the receiver pod(s) and the OTel collector
+                  pod(s) that are part of the platform.
+          KP9lrGvp3jTeJbIDkdzP8:
+            spec:
+              plugin:
+                kind: StatChart
+                spec:
+                  calculation: last
+                  format:
+                    unit: binBps
+                    decimalPlaces: 0
+                  sparkline: true
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps: []
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum(rate(pod_received_bytes_count{local_pod_name=~".*-(receiver|collector)-.*",
+                          cluster_name='${cluster}', direction="incoming",
+                          intra_pod!='true',
+                          local_pod_ns='${namespace}'}[${__rate_interval}]))
+                        alias: Total Data Volume
+              display:
+                name: Total data volume
+                description: The total amount of data received on the SUSE Observability API,
+                  this includes topology, metrics, logs, traces, events, and health.
+          qpExljGT-9X2iu50hKfx_:
+            spec:
+              plugin:
+                kind: StatChart
+                spec:
+                  calculation: last
+                  format:
+                    unit: short
+                    decimalPlaces: 0
+                  sparkline: true
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps: []
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (element_type)(max_over_time(stackstate_stackstate_receiver_unique_element_passed_count{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          element_type='agent'}[${__interval}]))
+                        alias: node
+              display:
+                name: Incoming data
+                description: The number of standard nodes (4 vCPU and 16GiB of memory) from
+                  which data is received. The real nodes can be a different size, so
+                  the real node count can be significantly lower.
+          P_IBNZlmdKtK-uXWJWE8z:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percent
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: 100 * sum by (kube_app_component)
+                          (container_cpu_throttled_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_component=~"receiver|receiver-base"}) / sum by
+                          (kube_app_component)
+                          (container_cpu_elapsed_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_component=~"receiver|receiver-base"})
+                        alias: ${kube_app_component}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: 100 * sum by (kube_app_name)
+                          (container_cpu_throttled_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name=~"opentelemetry-collector"}) / sum by
+                          (kube_app_name)
+                          (container_cpu_elapsed_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name=~"opentelemetry-collector"})
+                        alias: ${kube_app_name}
+              display:
+                name: CPU Throttling
+                description: CPU throttling for the main pods in the data ingestion pipeline.
+                  High throttling can lead to delays in data processing, a profile
+                  upgrade or CPU limit increase can resolve the problem.
+          IFl4huEAwoMRTyV0l5IeP:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    label: something
+                    range:
+                      min:
+                      max:
+                    format:
+                      unit: short
+                      decimalPlaces: 2
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (cluster_name, namespace, pod_name,
+                          kube_app_component)(max_over_time(container_cpu_usage{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_component=~"receiver|receiver-base"}[${__interval}]))
+                          / 1000000000
+                        alias: ${kube_app_component}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (cluster_name, namespace,
+                          kube_app_name)(max_over_time(container_cpu_usage{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name="opentelemetry-collector"}[${__interval}])) /
+                          1000000000
+                        alias: ${kube_app_name}
+              display:
+                name: CPU Usage Processing
+                description: "For the receiver and opentelemetry collector: the 2 APIs that
+                  accept telemetry data."
+          L9E1jtO844cup6_P4Po1g:
+            spec:
+              plugin:
+                kind: GaugeChart
+                spec:
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 0.9
+                      - color: "#FF7F00"
+                        value: 0.8
+                    mode: absolute
+                  max: 1
+                  format:
+                    unit: percentunit
+                    decimalPlaces: 0
+                  calculation: last
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (storage)(label_replace(max_over_time(kubernetes_kubelet_volume_stats_used_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~".*(kafka-|hbase-|victoria-metrics|clickhouse|vmagent|zookeeper|sync).*"}[5m])
+                          /
+                          max_over_time(kubernetes_kubelet_volume_stats_capacity_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~".*(kafka-|hbase-|victoria-metrics|clickhouse|vmagent|zookeeper|sync).*"}[5m]),
+                          "storage","$1",  "persistentvolumeclaim",
+                          ".*-(kafka-.*|hbase-.*|victoria-metrics-.*|clickhouse-.*|vmagent-.*|zookeeper-.*|sync-tmp)"))
+                        alias: ${storage}
+              display:
+                name: Volume usage
+                description: "Percentage of persistent volume capacity used by data ingestion components."
+        layouts:
+          - kind: Grid
+            spec:
+              items:
+                - x: 6
+                  y: 0
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/YHvrlowP7KLrAuLWFrWBd"
+                - x: 3
+                  y: 0
+                  width: 3
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/KP9lrGvp3jTeJbIDkdzP8"
+                - x: 0
+                  y: 0
+                  width: 3
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/qpExljGT-9X2iu50hKfx_"
+                - x: 0
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/P_IBNZlmdKtK-uXWJWE8z"
+                - x: 8
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/IFl4huEAwoMRTyV0l5IeP"
+                - x: 0
+                  y: 4
+                  width: 24
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/L9E1jtO844cup6_P4Po1g"
+        variables:
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricLabelValues
+                spec:
+                  labelName: cluster_name
+                  matchers:
+                    - stackstate_stackstate_receiver_element_create_passed_count
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: cluster
+              display:
+                name: Cluster
+                description: ""
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricPromQL
+                spec:
+                  labelName: namespace
+                  expr: stackstate_stackstate_receiver_element_create_passed_count{cluster_name="${cluster}"}
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: namespace
+              display:
+                name: Namespace
+                description: ""

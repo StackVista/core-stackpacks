@@ -1,0 +1,16 @@
+ClickHouse has too much files which not insert to `*MergeTree` tables via `Distributed` table engine
+Check not synced .bin files via
+
+```kubectl exec -n {{labels.namespace}} pod/{{labels.pod_name}} -- bash -c "ls -la /var/lib/clickhouse/data/*/*/*/*.bin"```
+
+Also, check documentation:
+https://clickhouse.com/docs/en/engines/table-engines/special/distributed/
+When you insert data to `Distributed` table.
+Data is written to target `*MergreTree` tables asynchronously.
+When inserted in the table, the data block is just written to the local file system.
+The data is sent to the remote servers in the background as soon as possible.
+The period for sending data is managed by the `distributed_directory_monitor_sleep_time_ms` and `distributed_directory_monitor_max_sleep_time_ms` settings.
+The Distributed engine sends each file with inserted data separately, but you can enable batch sending of files with the `distributed_directory_monitor_batch_inserts` setting
+
+Also, you can manage distributed tables:
+https://clickhouse.com/docs/en/sql-reference/statements/system/#managing-distributed-tables

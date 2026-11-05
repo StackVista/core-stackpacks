@@ -1,0 +1,18 @@
+`stackstate_otelcol_processor_dropped_spans` metric in your OpenTelemetry collector indicates that spans are being dropped
+by processors within your OpenTelemetry collector before they can be exported.
+
+Potential Reasons:
+- Processor Configuration:
+  - **Incorrect configuration**: Double-check your processor configuration for errors like typos, invalid parameters, or incorrect sampling rules.
+  - **Disabled processor**: Ensure the relevant processor is enabled and not accidentally commented out.
+  - **Memory limits**: Some processors have memory limits for storing processed data. If exceeded, spans might be dropped.
+- Resource Limitations:
+  - **Processor overload**: If the processor is overloaded with processing tasks, it might drop spans to avoid resource exhaustion. Monitor CPU and memory usage of the collector by checking `Metrics` tab.
+  - **Queue overflows**: Check related metrics like `stackstate_otelcol_processor_queue_size` and `stackstate_otelcol_processor_queue_capacity`. If the queue is constantly full, spans might be dropped due to lack of space.
+- Span Data Issues:
+  - **Invalid format**: Ensure the format of your spans (e.g., Protobuf) adheres to the processor's requirements.
+  - **Size limits**: Some processors have size limits for individual spans or batches. If your spans exceed those limits, they might be dropped.
+- Other Potential Causes:
+  - **Bugs in the processor**: While less likely, consider checking for known issues or bugs in the specific processor you're using.
+
+You may find more details by checking [logs](/#/components/{{ componentUrnForUrl }}#logs).

@@ -1,0 +1,4 @@
+ClickHouse increase DistributedSyncInsertionTimeoutExceeded in `system.events` table.
+It mean Synchronous distributed insert timeout exceeded after successfully distributed connection.
+Please check documentation https://clickhouse.com/docs/en/operations/settings/settings/#insert_distributed_sync
+And check connection between the Pod and all nodes in shards from remote_servers config section

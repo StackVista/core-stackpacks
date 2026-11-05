@@ -1,0 +1,5 @@
+ClickHouse has too many open connections.
+The ClickHouse is adapted to run not a very large number of parallel SQL requests, not every HTTP/TCP(Native)/MySQL protocol connection means a running SQL request, but a large number of open connections can cause a spike in sudden SQL requests, resulting in performance degradation.
+
+Also read documentation:
+- https://clickhouse.com/docs/en/operations/server-configuration-parameters/settings/#max-concurrent-queries

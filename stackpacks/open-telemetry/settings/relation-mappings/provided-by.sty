@@ -1,0 +1,34 @@
+nodes:
+  - _type: "OtelRelationMapping"
+    name: "OTel service instance provided-by service relation"
+    description: "Links a service to its instance"
+    identifier: "urn:stackpack:open-telemetry:otel-relation-mapping:provided-by"
+    input:
+      signal:
+        - "TRACES"
+        - "METRICS"
+      resource:
+        action: "'CREATE'"
+        condition: "'service.name' in resource.attributes"
+    vars:
+      - name: "namespace"
+        value: >-
+          'service.namespace' in resource.attributes &&
+          resource.attributes['service.namespace'] != '' ?
+          resource.attributes['service.namespace'] :
+          'default'
+      - name: "service"
+        value: "resource.attributes['service.name']"
+      - name: "instanceId"
+        value: >-
+          'service.instance.id' in resource.attributes ?
+          resource.attributes['service.instance.id'] :
+          resource.attributes['service.name']
+    output:
+      sourceId: >-
+        'urn:opentelemetry:namespace/' + vars.namespace + ':service/' + vars.service
+      targetId: >-
+        'urn:opentelemetry:namespace/' + vars.namespace + ':service/' + vars.service + ':serviceInstance/' + vars.instanceId
+      typeName: "'provided-by'"
+      dependencyType: "'HIERARCHICAL'"
+    expireAfter: 900000

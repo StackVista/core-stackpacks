@@ -1,0 +1,19 @@
+`stackstate_otelcol_receiver_refused_metric_points` metric in your OpenTelemetry collector indicates that metric points are being rejected by the
+collector. This could be happening for several reasons:
+
+Common Reasons:
+- Receiver configuration:
+  - **Disabled receiver**: Ensure the receiver you're trying to send metrics to (e.g., Prometheus exporter) is actually enabled and configured correctly in your collector config.
+  - **Invalid configuration**: Double-check your receiver configuration for typos, incorrect values, or any other errors that might prevent it from accepting metrics.
+  - **Metric name conflicts**: If you're using the Prometheus exporter, verify that metric names don't clash with existing metrics collected by Prometheus itself.
+- Metric data format:
+  - **Invalid or unsupported format**: Prometheus expects metrics in a specific format. Ensure your metric points adhere to this format (e.g., timestamp, name, value, labels).
+  - **Data type mismatches**: Check if the data types of your metric values (e.g., gauge, counter) match what the receiver expects.
+- Resource limitations:
+  - **Processor or memory overload**: If the collector is overloaded, it might refuse metrics to avoid further resource exhaustion. Monitor your collector's resource usage by checking `Metrics` tab and consider scaling if necessary
+  - **Queue overflows**: Check related metrics like `stackstate_otelcol_exporter_queue_size` and `stackstate_otelcol_exporter_queue_capacity`. If the queue is consistently full, you might need to adjust batch sizes, sending intervals, or increase queue capacity.
+- Network issues:
+  - **Connectivity problems**: Ensure the collector can establish and maintain a connection to the receiving endpoint (e.g., backend). Connectivity issues might prevent metrics delivery.
+  - **Firewall restrictions**: Check for any firewall rules that might block communication between the collector and the receiving endpoint.
+
+You may find more details by checking [logs](/#/components/{{ componentUrnForUrl }}#logs).

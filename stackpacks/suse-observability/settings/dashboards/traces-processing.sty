@@ -1,0 +1,272 @@
+nodes:
+  - _type: Dashboard
+    identifier: urn:stackpack:suse-observability:dashboard:traces-processing
+    name: SUSE Observability - Traces processing
+    description: ""
+    dashboard:
+      metadata:
+        project: '{"saveVariables":false}'
+      spec:
+        panels:
+          ExAp1uCSS2aYmub4u_Hpt:
+            spec:
+              plugin:
+                kind: StatChart
+                spec:
+                  calculation: last
+                  format:
+                    unit: ""
+                    decimalPlaces: 0
+                  sparkline: true
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 5
+                      - color: "#FF7F00"
+                        value: 1
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum(increase(stackstate_ClickHouseProfileEvents_DelayedInserts{cluster_name="${cluster}",
+                          namespace="${namespace}"}[1h])) by (cluster_name, namespace)
+                        alias: Delayed inserts (last hour)
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum(increase(stackstate_ClickHouseProfileEvents_RejectedInserts{cluster_name="${cluster}",
+                          namespace="${namespace}"}[1h])) by (cluster_name, namespace)
+                        alias: Rejected inserts (last hour)
+              display:
+                name: ClickHouse
+                description: Traces are stored in ClickHouse, if data is delayed or rejected it
+                  means some traces are later or not at all available.
+          Rv6ehkvi0i3ws1Z7KA9wf:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: percent
+                      decimalPlaces: 0
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: 100 * sum by (kube_app_component)
+                          (container_cpu_throttled_periods{cluster_name="${cluster}",
+                          namespace="${namespace}", kube_app_component=~"clickhouse"})
+                          / sum by (kube_app_component)
+                          (container_cpu_elapsed_periods{cluster_name="${cluster}",
+                          namespace="${namespace}", kube_app_component=~"clickhouse"})
+                        alias: ${kube_app_component}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: 100 * sum by (kube_app_name)
+                          (container_cpu_throttled_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name=~"opentelemetry-collector"}) / sum by
+                          (kube_app_name)
+                          (container_cpu_elapsed_periods{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name=~"opentelemetry-collector"})
+                        alias: ${kube_app_name}
+              display:
+                name: CPU Throttling
+                description: CPU throttling for the main pods in the data ingestion pipeline.
+                  High throttling can lead to delays in data processing, a profile
+                  upgrade or CPU limit increase can resolve the problem.
+          wYSjcYqXSXLRvrKEeAgZQ:
+            spec:
+              plugin:
+                kind: TimeSeriesChart
+                spec:
+                  yAxis:
+                    show: true
+                    format:
+                      unit: short
+                      decimalPlaces: 2
+                  legend:
+                    show: true
+                    position: bottom
+                    mode: list
+                    values: []
+                  thresholds:
+                    mode: absolute
+                    steps: []
+                  visual:
+                    connectNulls: false
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (cluster_name, namespace, pod_name,
+                          kube_app_component)(max_over_time(container_cpu_usage{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_component=~"clickhouse"}[${__interval}])) /
+                          1000000000
+                        alias: ${kube_app_component}
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: sum by (cluster_name, namespace,
+                          kube_app_name)(max_over_time(container_cpu_usage{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          kube_app_name="opentelemetry-collector"}[${__interval}])) /
+                          1000000000
+                        alias: ${kube_app_name}
+              display:
+                name: CPU Usage Processing
+                description: "CPU usage of ClickHouse and OpenTelemetry collector pods."
+          7nAaWHcI1m_yktoqpY5gH:
+            spec:
+              plugin:
+                kind: GaugeChart
+                spec:
+                  thresholds:
+                    defaultColor: "#33A02C"
+                    steps:
+                      - color: "#E31A1C"
+                        value: 0.9
+                      - color: "#FF7F00"
+                        value: 0.8
+                    mode: absolute
+                  max: 1
+                  format:
+                    unit: percentunit
+                    decimalPlaces: 0
+                  calculation: last
+              links: []
+              queries:
+                - kind: TimeSeriesQuery
+                  spec:
+                    plugin:
+                      kind: PrometheusTimeSeriesQuery
+                      spec:
+                        query: max by
+                          (storage)(label_replace(max_over_time(kubernetes_kubelet_volume_stats_used_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~"data-.*-(clickhouse-.*)"}[5m]) /
+                          max_over_time(kubernetes_kubelet_volume_stats_capacity_bytes{cluster_name="${cluster}",
+                          namespace="${namespace}",
+                          persistentvolumeclaim=~"data-.*-(clickhouse-.*)"}[5m]),
+                          "storage","$1",  "persistentvolumeclaim",
+                          "data-.*-(clickhouse-.*)"))
+                        alias: ${storage}
+              display:
+                name: Volume usage
+                description: "Percentage of persistent volume capacity used by ClickHouse."
+          HgyHHI7knLfl4MHuvyvbF:
+            spec:
+              plugin:
+                kind: Markdown
+                spec:
+                  text: >-
+                    # More details
+
+                    These are the pods and workloads involved in the metrics pipeline:
+
+
+                    *
+                    [Pods](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:pods/overview?query=label%20IN%20%28"app.kubernetes.io%2Fname%3Aclickhouse"%2C%20"app.kubernetes.io%2Fname%3Aopentelemetry-collector"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20%3D%20"pod")
+
+                    *
+                    [Statefulsets](/#/views/urn:stackpack:kubernetes-v2:shared:query-view:statefulsets/overview?query=label%20IN%20%28"app.kubernetes.io%2Fname%3Aclickhouse"%2C%20"app.kubernetes.io%2Fname%3Aopentelemetry-collector"%29%20AND%20label%20%3D%20"cluster-name%3A${cluster}"%20AND%20label%20%3D%20"namespace%3A${namespace}"%20AND%20type%20IN%28"statefulset"%29)
+              links: []
+              queries: []
+              display:
+                name: "-"
+                description: "Links to related Pods and StatefulSets."
+        layouts:
+          - kind: Grid
+            spec:
+              items:
+                - x: 0
+                  y: 0
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/ExAp1uCSS2aYmub4u_Hpt"
+                - x: 0
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/Rv6ehkvi0i3ws1Z7KA9wf"
+                - x: 8
+                  y: 2
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/wYSjcYqXSXLRvrKEeAgZQ"
+                - x: 8
+                  y: 0
+                  width: 8
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/7nAaWHcI1m_yktoqpY5gH"
+                - x: 16
+                  y: 0
+                  width: 5
+                  height: 2
+                  content:
+                    $ref: "#/spec/panels/HgyHHI7knLfl4MHuvyvbF"
+        variables:
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricLabelValues
+                spec:
+                  labelName: cluster_name
+                  matchers:
+                    - stackstate_stackstate_receiver_element_create_passed_count
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: cluster
+              display:
+                name: Cluster
+                description: ""
+          - kind: ListVariable
+            spec:
+              plugin:
+                kind: MetricPromQL
+                spec:
+                  labelName: namespace
+                  expr: stackstate_stackstate_receiver_element_create_passed_count{cluster_name="${cluster}"}
+              sort: alphabetical-asc
+              allowMultiple: false
+              allowAllValue: false
+              name: namespace
+              display:
+                name: Namespace
+                description: ""

@@ -58,7 +58,7 @@ Same-repository pull requests and `main` pushes can publish a bundle.
 The image reference uses this form:
 
 ```text
-ghcr.io/stackvista/core-stackpacks:<timestamp>-<branch>-<commit>
+quay.io/stackstate/core-stackpacks:<timestamp>-<branch>-<commit>
 ```
 
 The timestamp and commit identify the workflow checkout.
@@ -66,23 +66,23 @@ The tag on a pull request can identify GitHub's test merge commit.
 Retried publication jobs append `-retry-<attempt>` to create a new immutable tag.
 The content versions remain in each `stackpack.yaml`.
 
-## First publication
+After a successful `main` publication, CI requests the Helm chart version update.
+Pull requests and failed publications do not trigger this update.
 
-GitHub creates new container packages with private visibility.
-An organization member with package administration access must set this package to public.
-The publication workflow fails its anonymous access check until this change is complete.
+## Publication credentials
 
-1. Open the `core-stackpacks` package settings in the StackVista organization.
-2. Change the package visibility to `Public`.
-3. Rerun the failed publication job.
-4. Make sure that the image permits pulls without authentication:
+CI requires `QUAY_USER` and `QUAY_PASSWORD` for the public Quay repository.
+The chart update also requires GitHub App credentials.
+Infrastructure configuration manages these credentials.
+The publication workflow makes sure that the image permits anonymous pulls.
+
+Before the chart adopts a new bundle, make sure that this command succeeds:
 
 ```sh
-image='ghcr.io/stackvista/core-stackpacks:<published-tag>'
+image='quay.io/stackstate/core-stackpacks:<published-tag>'
 temporary_docker_configuration=$(mktemp -d)
 DOCKER_CONFIG="${temporary_docker_configuration}" docker buildx imagetools inspect "${image}"
 rm -rf "${temporary_docker_configuration}"
 ```
 
-Before the chart adopts a new bundle, make sure that this check succeeds.
 The chart's existing bundle stays in place until the replacement image is available.

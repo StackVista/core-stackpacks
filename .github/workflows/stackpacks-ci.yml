@@ -284,7 +284,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      packages: write
       id-token: write
     steps:
       - name: Check out repository
@@ -310,7 +309,7 @@ jobs:
             tag="${tag}-retry-${GITHUB_RUN_ATTEMPT}"
           fi
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
-          echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}" >> "${GITHUB_OUTPUT}"
+          echo "ref=quay.io/stackstate/core-stackpacks" >> "${GITHUB_OUTPUT}"
       - name: Publish and sign the tested images
         uses: StackVista/image-pipeline/.github/actions/scan-sign-push@6869879307d976158fa07ee5bff27ceb8eb031af # v1.0.0
         with:
@@ -319,9 +318,9 @@ jobs:
           arches: amd64,arm64
           source-mode: tarball
           tarball-dir: images
-          target-registry: ghcr.io
-          target-registry-user: ${{ github.actor }}
-          target-registry-password: ${{ github.token }}
+          target-registry: quay.io
+          target-registry-user: ${{ secrets.QUAY_USER }}
+          target-registry-password: ${{ secrets.QUAY_PASSWORD }}
           severity: HIGH,CRITICAL
           with-grype: true
           upload-sarif: false
@@ -332,7 +331,45 @@ jobs:
           tmp=$(mktemp -d)
           trap 'rm -rf "${tmp}"' EXIT
           if ! DOCKER_CONFIG="${tmp}" docker buildx imagetools inspect "${IMAGE_REF}" >/dev/null; then
-            echo 'Set the core-stackpacks container package visibility to Public before using it in the chart.' >&2
-            echo 'After changing visibility, rerun the failed publication job.' >&2
+            echo 'The published Quay image must permit anonymous pulls before the chart can use it.' >&2
             exit 1
           fi
+
+  update-stackpacks-version-in-helm:
+    name: Update stackpacks version in helm-charts-internal
+    needs: [publish-image]
+    if: |
+      always() &&
+      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.publish-image.result == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.HELM_CHARTS_INTERNAL_GH_APP_CLIENT_ID }}
+          private-key: ${{ secrets.HELM_CHARTS_INTERNAL_GH_APP_PRIVATE_KEY }}
+          repositories: helm-charts-internal
+          permission-actions: write
+
+      - name: Trigger helm-charts-internal updatecli workflow
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          curl --fail-with-body --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data '{
+              "ref": "master",
+              "inputs": {
+                "pipeline": "stackpacks",
+                "target_branch": "master",
+                "stackpacks_source_branch": "master",
+                "stackpacks_contrib_source_branch": "main",
+                "stackpacks_suse_source_branch": "main",
+                "dry_run": "false"
+              }
+            }' \
+            "https://api.github.com/repos/StackVista/helm-charts-internal/actions/workflows/updatecli.yml/dispatches"

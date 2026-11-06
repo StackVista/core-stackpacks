@@ -8,3 +8,5 @@ kubectl delete pod  {{ labels.pod_name }}  -n {{ labels.namespace }}
 `Restarting the pod can help by either unblocking the issue or making it more evident in the logs`
 
 2. Inspect the [Logs](/#/components/{{ componentUrnForUrl }}#logs) of the pod in order to find the root cause of the blockage.
+
+For more details, see [Topology is delayed or components are missing](https://documentation.suse.com/cloudnative/suse-observability/latest/en/setup/install-stackstate/data-ingestion-pipeline.html#_topology_is_delayed_or_components_are_missing).

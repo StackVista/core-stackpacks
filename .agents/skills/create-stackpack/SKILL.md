@@ -13,10 +13,11 @@ Use the current declarative scaffold and adapt it to that integration.
 Read the official [creation guide](https://documentation.suse.com/cloudnative/suse-observability/latest/en/setup/custom-integrations/create.html) before starting.
 Follow its reference links for the settings being changed.
 Use the [StackPack reference](https://documentation.suse.com/cloudnative/suse-observability/latest/en/setup/custom-integrations/stackpacks.html) for project structure, versioning, and CLI commands.
-Use [contrib-stackpacks](https://github.com/StackVista/contrib-stackpacks/tree/main/stackpacks) for working examples:
+Use [core-stackpacks](https://github.com/StackVista/core-stackpacks/tree/main/stackpacks) for working examples:
 
 - `open-telemetry`: component and relation mappings, presentations, and monitors.
 - `otel-k8s-crd`: topology from Kubernetes custom-resource events.
+- `service-availability`: endpoint and service topology, Blackbox availability monitors, and optional TLS certificate checks.
 - `suse-observability`: presentations and monitors for existing platform components.
 
 Read only the relevant example files. Prefer current schemas over copying an entire integration.

@@ -4,6 +4,7 @@ The SUSE Observability team maintains these StackPacks:
 
 - `open-telemetry`
 - `otel-k8s-crd`
+- [`service-availability`](stackpacks/service-availability/README.md) — HTTP and HTTPS endpoint availability, service grouping, and optional TLS certificate expiration checks.
 - `suse-observability`
 
 The product includes the core bundle by default.

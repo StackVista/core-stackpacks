@@ -1,0 +1,11 @@
+At least one endpoint of **{{ labels.availability_service }}** failed its check
+or scrape.
+
+Open the service highlight and inspect its related endpoints. Check the failing
+endpoint's health check, HTTP response code and probe duration, then investigate
+its application, network path or TLS certificate. Check the endpoint's `up`
+metric and scraper logs when its Blackbox metrics are missing.
+
+Every labeled URL is required for service availability. If a URL is an optional
+dependency, monitor it separately without the service's `availability_service`
+label.

@@ -1,0 +1,14 @@
+Check the endpoint **{{ labels.endpoint }}** from the Blackbox Exporter's network.
+
+1. Inspect `probe_http_status_code` and the exporter's probe output. With
+   `http_2xx`, the final response after redirects must be 2xx.
+2. If no response was received, check DNS, routing, network policies, timeouts and
+   the endpoint's workload.
+3. For HTTPS, check the certificate chain, hostname and validity. Expired or
+   untrusted certificates fail the probe.
+4. Confirm that the Probe's module exists in the exporter configuration and
+   that the exporter is running and reachable from the OTel scraper.
+   Check `up` for this endpoint: zero means the scrape failed, even if
+   `probe_success` is absent or still shows an older successful check.
+
+If multiple Probes check this URL, any failing probe makes the endpoint critical.

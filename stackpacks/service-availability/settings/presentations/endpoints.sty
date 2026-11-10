@@ -1,0 +1,175 @@
+nodes:
+  - _type: ComponentPresentation
+    name: HTTP endpoints
+    description: Availability, HTTP response status, probe duration and optional TLS certificate validity.
+    identifier: urn:stackpack:service-availability:component-presentation:endpoint
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: 'label = "stackpack:service-availability" and type = "http endpoint"'
+    rank:
+      specificity: 10
+    presentation:
+      icon: !icon endpoint.svg
+      overview:
+        name:
+          singular: endpoint
+          plural: endpoints
+          title: Endpoints
+        mainMenu:
+          group: Service Availability
+          order: 100
+        columns:
+          - columnId: endpoint_health
+            title: Health
+            projection:
+              _type: HealthProjection
+              value: healthState
+          - columnId: endpoint_name
+            title: Endpoint
+            projection:
+              _type: ComponentLinkProjection
+              name: name
+              identifier: "identifiers[0]"
+          - columnId: endpoint_http_status
+            title: HTTP status
+            projection:
+              _type: MetricProjection
+              query: >-
+                max by (endpoint) (probe_http_status_code{service_availability="true",endpoint="${tags.singleValue('endpoint.url')}"})
+              unit: short
+              decimalPlaces: 0
+              sparkline: false
+              metricId: endpoint-http-status
+          - columnId: endpoint_probe_duration
+            title: Probe duration
+            projection:
+              _type: MetricProjection
+              query: >-
+                max by (endpoint) (probe_duration_seconds{service_availability="true",endpoint="${tags.singleValue('endpoint.url')}"})
+              unit: s
+              decimalPlaces: 3
+              sparkline: true
+              metricId: endpoint-probe-duration
+          - columnId: endpoint_certificate_validity
+            title: Certificate expires in
+            projection:
+              _type: MetricProjection
+              query: >-
+                min by (endpoint) (probe_ssl_earliest_cert_expiry{service_availability="true",endpoint="${tags.singleValue('endpoint.url')}"} > 0) - time()
+              unit: s
+              decimalPlaces: 0
+              sparkline: false
+              metricId: endpoint-certificate-validity
+        sort:
+          - columnId: endpoint_health
+          - columnId: endpoint_name
+      highlight:
+        title: HTTP endpoint
+        fields:
+          - fieldId: health
+            title: Health
+            order: 100
+            projection:
+              _type: HealthProjection
+              value: healthState
+          - fieldId: url
+            title: URL
+            order: 90
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('endpoint.url')"
+        provisioning:
+          topologySourceSelector: "source.mapping.identifier == 'urn:stackpack:service-availability:otel-component-mapping:endpoint'"
+          showConfiguration: true
+          showStatus: false
+        relatedResources:
+          - resourceId: endpoint_services
+            title: Services
+            order: 100
+            topologyQuery: '(withNeighborsOf(direction = "up", components = (identifier = "${identifiers[0]}"), levels = "1")) and type = "availability service"'
+            presentationIdentifier: urn:stackpack:service-availability:component-presentation:service
+        metrics:
+          - sectionId: availability
+            title: Availability
+            order: 100
+            metrics:
+              - metricId: endpoint-probe-success
+                order: 100
+              - metricId: endpoint-http-status
+                order: 90
+              - metricId: endpoint-probe-duration
+                order: 80
+          - sectionId: certificates
+            title: TLS certificate
+            order: 90
+            metrics:
+              - metricId: endpoint-certificate-validity
+                order: 100
+      metricPerspective:
+        tabs:
+          - tabId: availability
+            title: Availability
+            order: 100
+            sections:
+              - sectionId: availability
+                title: Availability
+                order: 100
+                metrics:
+                  - metricId: endpoint-probe-success
+                  - metricId: endpoint-http-status
+                  - metricId: endpoint-probe-duration
+              - sectionId: certificates
+                title: TLS certificate
+                order: 90
+                metrics:
+                  - metricId: endpoint-certificate-validity
+    metrics:
+      - metricId: endpoint-probe-success
+        name: Probe success
+        description: One means the available check and scrape results succeeded; zero means a check or scrape failed.
+        metricQueries:
+          - expression: >-
+              min({__name__=~"probe_success|up",service_availability="true",endpoint="${tags.singleValue('endpoint.url')}"})
+            alias: Probe success
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      - metricId: endpoint-http-status
+        name: HTTP status
+        description: The HTTP response code; zero indicates no HTTP response was received.
+        metricQueries:
+          - expression: >-
+              probe_http_status_code{service_availability="true",endpoint="${tags.singleValue('endpoint.url')}"}
+            alias: HTTP status ${service_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      - metricId: endpoint-probe-duration
+        name: Probe duration
+        description: Total time spent performing the probe.
+        metricQueries:
+          - expression: >-
+              probe_duration_seconds{service_availability="true",endpoint="${tags.singleValue('endpoint.url')}"}
+            alias: Probe duration ${service_name}
+        chart:
+          _type: TimeSeriesChart
+          unit: s
+      - metricId: endpoint-certificate-validity
+        name: Certificate expires in (days)
+        description: Whole days until the earliest TLS certificate expiration; absent when no certificate is reported.
+        metricQueries:
+          - expression: >-
+              floor((min by (endpoint) (probe_ssl_earliest_cert_expiry{service_availability="true",endpoint="${tags.singleValue('endpoint.url')}"} > 0) - time()) / 86400)
+            alias: Days remaining
+        chart:
+          _type: TimeSeriesChart
+          unit: d
+          decimals: 0
+          min: 0
+          thresholds:
+            mode: absolute
+            steps:
+              - value: 14
+                color: "#FF7F00"
+              - value: 2
+                color: "#E00000"

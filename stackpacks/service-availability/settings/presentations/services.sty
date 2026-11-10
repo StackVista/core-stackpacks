@@ -1,0 +1,102 @@
+nodes:
+  - _type: ComponentPresentation
+    name: Availability services
+    description: Service availability and the HTTP endpoints that contribute to it.
+    identifier: urn:stackpack:service-availability:component-presentation:service
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: 'label = "stackpack:service-availability" and type = "availability service"'
+    rank:
+      specificity: 10
+    presentation:
+      icon: !icon service.svg
+      overview:
+        name:
+          singular: service
+          plural: services
+          title: Services
+        mainMenu:
+          group: Service Availability
+          order: 90
+        columns:
+          - columnId: availability_service_health
+            title: Health
+            projection:
+              _type: HealthProjection
+              value: healthState
+          - columnId: availability_service_name
+            title: Service
+            projection:
+              _type: ComponentLinkProjection
+              name: name
+              identifier: "identifiers[0]"
+          - columnId: availability_service_endpoints
+            title: Monitored endpoints
+            projection:
+              _type: MetricProjection
+              query: >-
+                count by (availability_service) (count by (availability_service, endpoint) ({__name__=~"probe_success|up",service_availability="true",availability_service="${tags.singleValue('availability.service')}",endpoint=~"https?://.+"}))
+              unit: short
+              decimalPlaces: 0
+              sparkline: false
+              metricId: service-endpoint-count
+        sort:
+          - columnId: availability_service_health
+          - columnId: availability_service_name
+      highlight:
+        title: Availability service
+        fields:
+          - fieldId: health
+            title: Health
+            order: 100
+            projection:
+              _type: HealthProjection
+              value: healthState
+        relatedResources:
+          - resourceId: service_endpoints
+            title: Endpoints
+            order: 100
+            topologyQuery: '(withNeighborsOf(direction = "down", components = (identifier = "${identifiers[0]}"), levels = "1")) and type = "http endpoint"'
+            presentationIdentifier: urn:stackpack:service-availability:component-presentation:endpoint
+        metrics:
+          - sectionId: availability
+            title: Availability
+            order: 100
+            metrics:
+              - metricId: service-probe-success
+                order: 100
+              - metricId: service-endpoint-count
+                order: 90
+      metricPerspective:
+        tabs:
+          - tabId: availability
+            title: Availability
+            order: 100
+            sections:
+              - sectionId: availability
+                title: Availability
+                order: 100
+                metrics:
+                  - metricId: service-probe-success
+                  - metricId: service-endpoint-count
+    metrics:
+      - metricId: service-probe-success
+        name: Service probe success
+        description: One when all available service check and scrape results succeed; zero when any fails.
+        metricQueries:
+          - expression: >-
+              min({__name__=~"probe_success|up",service_availability="true",availability_service="${tags.singleValue('availability.service')}",endpoint=~"https?://.+"})
+            alias: Service availability
+        chart:
+          _type: TimeSeriesChart
+          unit: short
+      - metricId: service-endpoint-count
+        name: Monitored endpoints
+        description: Number of distinct endpoint URLs with current check or scrape samples for this service, including failed scrapes.
+        metricQueries:
+          - expression: >-
+              count by (availability_service) (count by (availability_service, endpoint) ({__name__=~"probe_success|up",service_availability="true",availability_service="${tags.singleValue('availability.service')}",endpoint=~"https?://.+"}))
+            alias: Monitored endpoints
+        chart:
+          _type: TimeSeriesChart
+          unit: short

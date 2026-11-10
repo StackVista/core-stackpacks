@@ -1,0 +1,35 @@
+nodes:
+  - _type: OtelComponentMapping
+    name: HTTP endpoint
+    description: Creates one endpoint component from opted-in Blackbox probe metrics.
+    identifier: urn:stackpack:service-availability:otel-component-mapping:endpoint
+    input:
+      signal: ["METRICS"]
+      resource:
+        scope:
+          metric:
+            condition: "metric.name in ['probe_success', 'up']"
+            datapoint:
+              action: "'CREATE'"
+              condition: >-
+                'service_availability' in datapoint.attributes &&
+                datapoint.attributes['service_availability'] == 'true' &&
+                'endpoint' in datapoint.attributes &&
+                datapoint.attributes['endpoint'].matches('^https?://.+')
+    vars:
+      - name: endpoint
+        value: "datapoint.attributes['endpoint']"
+    output:
+      identifier: "'urn:service-availability:endpoint/' + vars.endpoint"
+      name: vars.endpoint
+      typeName: "'http endpoint'"
+      required:
+        configuration: "{'url': vars.endpoint}"
+        tags:
+          - source: "'service-availability'"
+            target: stackpack
+          - source: vars.endpoint
+            target: endpoint.url
+    expireAfter: 900000
+    rank:
+      specificity: 100

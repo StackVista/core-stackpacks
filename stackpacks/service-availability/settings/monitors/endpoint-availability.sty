@@ -1,0 +1,23 @@
+nodes:
+  - _type: Monitor
+    name: Endpoint unavailable
+    description: Reports failed endpoint checks or scrapes, including connection, TLS validation and exporter errors.
+    identifier: urn:stackpack:service-availability:monitor:endpoint-unavailable
+    function: urn:stackpack:common:monitor-function:threshold
+    arguments:
+      comparator: LT
+      threshold: 1.0
+      failureState: CRITICAL
+      metric:
+        query: >-
+          min by (endpoint) (
+            {__name__=~"probe_success|up",service_availability="true",endpoint=~"https?://.+"}
+          )
+        aliasTemplate: Availability ${endpoint}
+        unit: short
+      titleTemplate: Endpoint is unavailable
+      urnTemplate: urn:service-availability:endpoint/${endpoint}
+    intervalSeconds: 60
+    status: ENABLED
+    tags: ["availability", "http", "blackbox"]
+    remediationHint: !include remediation-hints/endpoint-unavailable.md.hbs

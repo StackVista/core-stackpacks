@@ -1,0 +1,23 @@
+nodes:
+  - _type: Monitor
+    name: Endpoint certificate expiration imminent
+    description: Reports Critical when an opted-in endpoint's reported TLS certificate has less than two days remaining.
+    identifier: urn:stackpack:service-availability:monitor:certificate-expiration-imminent
+    function: urn:stackpack:common:monitor-function:threshold
+    arguments:
+      comparator: LT
+      threshold: 172800.0
+      failureState: CRITICAL
+      metric:
+        query: >-
+          min by (endpoint) (
+            probe_ssl_earliest_cert_expiry{service_availability="true",monitor_certificate_expiry="true",endpoint=~"https?://.+"} > 0
+          ) - time()
+        aliasTemplate: Certificate validity ${endpoint}
+        unit: s
+      titleTemplate: Certificate expiration is imminent
+      urnTemplate: urn:service-availability:endpoint/${endpoint}
+    intervalSeconds: 300
+    status: ENABLED
+    tags: ["availability", "certificates", "blackbox"]
+    remediationHint: !include remediation-hints/certificate-expiring.md.hbs

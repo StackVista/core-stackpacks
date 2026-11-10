@@ -1,0 +1,36 @@
+nodes:
+  - _type: OtelComponentMapping
+    name: Availability service
+    description: Groups HTTP endpoints using the optional availability_service metric label.
+    identifier: urn:stackpack:service-availability:otel-component-mapping:service
+    input:
+      signal: ["METRICS"]
+      resource:
+        scope:
+          metric:
+            condition: "metric.name in ['probe_success', 'up']"
+            datapoint:
+              action: "'CREATE'"
+              condition: >-
+                'service_availability' in datapoint.attributes &&
+                datapoint.attributes['service_availability'] == 'true' &&
+                'endpoint' in datapoint.attributes &&
+                datapoint.attributes['endpoint'].matches('^https?://.+') &&
+                'availability_service' in datapoint.attributes &&
+                datapoint.attributes['availability_service'] != ''
+    vars:
+      - name: service
+        value: "datapoint.attributes['availability_service']"
+    output:
+      identifier: "'urn:service-availability:service/' + vars.service"
+      name: vars.service
+      typeName: "'availability service'"
+      required:
+        tags:
+          - source: "'service-availability'"
+            target: stackpack
+          - source: vars.service
+            target: availability.service
+    expireAfter: 900000
+    rank:
+      specificity: 100

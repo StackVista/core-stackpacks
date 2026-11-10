@@ -1,0 +1,23 @@
+nodes:
+  - _type: Monitor
+    name: Service endpoint unavailable
+    description: Reports a service as unavailable when any of its labeled endpoint checks or scrapes fails.
+    identifier: urn:stackpack:service-availability:monitor:service-unavailable
+    function: urn:stackpack:common:monitor-function:threshold
+    arguments:
+      comparator: LT
+      threshold: 1.0
+      failureState: CRITICAL
+      metric:
+        query: >-
+          min by (availability_service) (
+            {__name__=~"probe_success|up",service_availability="true",availability_service!="",endpoint=~"https?://.+"}
+          )
+        aliasTemplate: Availability ${availability_service}
+        unit: short
+      titleTemplate: An endpoint of ${availability_service} is unavailable
+      urnTemplate: urn:service-availability:service/${availability_service}
+    intervalSeconds: 60
+    status: ENABLED
+    tags: ["availability", "service", "blackbox"]
+    remediationHint: !include remediation-hints/service-unavailable.md.hbs

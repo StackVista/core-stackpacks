@@ -1,0 +1,14 @@
+The earliest certificate expiration reported for **{{ labels.endpoint }}** is
+less than the configured expiration threshold away. The default warning is
+14 days; the critical window is two days. Prioritize renewal when Critical.
+
+1. Inspect the certificate served from the Blackbox Exporter's network, including
+   intermediate certificates in its chain.
+2. Check your certificate issuer and renewal automation. Renew the certificate
+   and confirm that the endpoint serves the renewed chain.
+3. Keep normal TLS verification enabled. An expired or invalid certificate also
+   fails the endpoint's availability check.
+
+Certificate expiration checks are selected by `monitor_certificate_expiry="true"`
+on Probe target labels. Change the monitor's threshold in seconds to adjust the
+warning or critical window.

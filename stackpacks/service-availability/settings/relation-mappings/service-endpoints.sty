@@ -1,0 +1,31 @@
+nodes:
+  - _type: OtelRelationMapping
+    name: Service endpoint
+    description: Links a service to each URL labeled with its availability_service identity.
+    identifier: urn:stackpack:service-availability:otel-relation-mapping:service-endpoint
+    input:
+      signal: ["METRICS"]
+      resource:
+        scope:
+          metric:
+            condition: "metric.name in ['probe_success', 'up']"
+            datapoint:
+              action: "'CREATE'"
+              condition: >-
+                'service_availability' in datapoint.attributes &&
+                datapoint.attributes['service_availability'] == 'true' &&
+                'endpoint' in datapoint.attributes &&
+                datapoint.attributes['endpoint'].matches('^https?://.+') &&
+                'availability_service' in datapoint.attributes &&
+                datapoint.attributes['availability_service'] != ''
+    vars:
+      - name: service
+        value: "datapoint.attributes['availability_service']"
+      - name: endpoint
+        value: "datapoint.attributes['endpoint']"
+    output:
+      sourceId: "'urn:service-availability:service/' + vars.service"
+      targetId: "'urn:service-availability:endpoint/' + vars.endpoint"
+      typeName: "'has endpoint'"
+      dependencyType: "'HIERARCHICAL'"
+    expireAfter: 900000

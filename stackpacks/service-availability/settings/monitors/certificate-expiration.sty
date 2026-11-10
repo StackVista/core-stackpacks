@@ -1,0 +1,23 @@
+nodes:
+  - _type: Monitor
+    name: Endpoint certificate expiring
+    description: Warns when an opted-in endpoint's reported TLS certificate has less than 14 days remaining.
+    identifier: urn:stackpack:service-availability:monitor:certificate-expiring
+    function: urn:stackpack:common:monitor-function:threshold
+    arguments:
+      comparator: LT
+      threshold: 1209600.0
+      failureState: DEVIATING
+      metric:
+        query: >-
+          min by (endpoint) (
+            probe_ssl_earliest_cert_expiry{service_availability="true",monitor_certificate_expiry="true",endpoint=~"https?://.+"} > 0
+          ) - time()
+        aliasTemplate: Certificate validity ${endpoint}
+        unit: s
+      titleTemplate: Certificate is expiring
+      urnTemplate: urn:service-availability:endpoint/${endpoint}
+    intervalSeconds: 300
+    status: ENABLED
+    tags: ["availability", "certificates", "blackbox"]
+    remediationHint: !include remediation-hints/certificate-expiring.md.hbs

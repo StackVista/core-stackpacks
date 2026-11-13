@@ -6,7 +6,7 @@ SUSE Observability logs are rejected when one or more log sources (for example p
 
 ### Increase Disk Space for ElasticSearch
 1. Verify the current ElasticSearch disk space and inspect its configuration to check the current size.
-    * Verify that the used storage class can be resized. For that please follow our [resizing documentation] https://docs.stackstate.com/self-hosted-setup/data-management/data_retention#resizing-storage
+    * Verify that the used storage class can be resized. See [Resizing storage](https://l.stackstate.com/stackpack-suse-observability-resizing-storage).
 2. Update the values.yaml adding more
 ```
 elasticsearch:
@@ -26,7 +26,7 @@ suse-observability \
 suse-observability/suse-observability
 ```
 
-For more detailed information visit our [data-retention](https://docs.stackstate.com/self-hosted-setup/data-management/data_retention) documentation.
+For more detailed information, see [Data retention](https://l.stackstate.com/stackpack-suse-observability-data-retention).
 
 ### Decrease retention for logs
 1. By default, SUSE Observability sets a 7-day retention for logs
@@ -48,3 +48,5 @@ helm upgrade \
 suse-observability \
 suse-observability/suse-observability
 ```
+
+For more details, see [Logs are missing](https://l.stackstate.com/stackpack-suse-observability-logs-missing).

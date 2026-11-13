@@ -1,28 +1,34 @@
-Element budget **nearly saturated for `{{ labels.element_type }}`**, has high unique element budget saturation level. When the budget is saturated data starts being dropped which translates in missing topology or metrics.
+The unique element budget for `{{ labels.element_type }}` is **nearly saturated**. When the budget is saturated, the receiver drops data for that element type, which shows up as missing topology or connections.
 
-### Increase the budget of elements allowed
-1. We can control the budget by setting extra environment variables for the receiver pod.
-Here are the default settings:
+Each budget is a value per agent multiplied by the number of agents, so it grows when you add agents.
+
+### Check for limited agents
+The sizing profile limits how many nodes you can observe. Agents above that limit are marked as limited. The receiver rejects their process, container and connection data, and they do not add to the budgets. Raising a budget does not help limited agents.
+
+1. Run `sts agent list`. The last line shows how many agents are active, limited and stale.
+2. If any agents are limited, move to the next sizing profile. A profile change can change volume sizes and the Kafka partition count, so it takes more than a `helm upgrade`.
+
+### Raise the budget per agent
+If no agents are limited, the agents send more elements than the default budget per agent allows, for example because they run many short-lived pods or open many connections.
+
+1. Find the variable for the saturated element type:
+
+| element type | environment variable |
+|--------------|----------------------|
+| component    | `CONFIG_FORCE_stackstate_receiver_processAgent_maxComponentsPerHost` |
+| relation     | `CONFIG_FORCE_stackstate_receiver_processAgent_maxRelationsPerHost` |
+| connection   | `CONFIG_FORCE_stackstate_receiver_processAgent_maxConnectionObservationsPerHost` |
+
+2. The current value per agent is `stackstate_stackstate_receiver_unique_element_passed_max` for this element type divided by `stackstate_stackstate_receiver_unique_element_passed_count{element_type="agent"}`. Raise it by 50% in your `values.yaml`, for example:
 ```
+stackstate:
+  components:
     receiver:
       extraEnv:
         open:
-          CONFIG_FORCE_stackstate_receiver_processAgent_maxAgents: "2000"
-          CONFIG_FORCE_stackstate_receiver_processAgent_maxComponents: "5000"
-          CONFIG_FORCE_stackstate_receiver_processAgent_maxConnections: "150000"
-          CONFIG_FORCE_stackstate_receiver_processAgent_maxRelations: "15000"
+          CONFIG_FORCE_stackstate_receiver_processAgent_maxComponentsPerHost: "450"
 ```
-
-2. Identify which budget got saturated and increment the right environment variable to allow more elements to be passed:
-
-| element type | environment variable                                         |
-|--------------|--------------------------------------------------------------|
-| agent        | CONFIG_FORCE_stackstate_receiver_processAgent_maxAgents      |
-| component    | CONFIG_FORCE_stackstate_receiver_processAgent_maxComponents  |
-| connection   | CONFIG_FORCE_stackstate_receiver_processAgent_maxConnections |
-| relation     | CONFIG_FORCE_stackstate_receiver_processAgent_maxRelations   |
-
-Keep in mind that allowing more elements to be processed will have an impact on downstream services such as the Correlator and the Topology Sync.
+On HA profiles, set the variable under `stackstate.components.receiver.split.processAgent.extraEnv.open`.
 
 3. Redeploy via a `helm upgrade` including any other values files or extra settings you applied previously
 ```
@@ -33,3 +39,7 @@ helm upgrade \
 suse-observability \
 suse-observability/suse-observability
 ```
+
+A higher budget increases the load on Correlate and Topology Sync, so watch their latency afterwards.
+
+For more details, see [Receiver element budget saturated](https://l.stackstate.com/stackpack-suse-observability-receiver-element-budget).

@@ -1,0 +1,93 @@
+nodes:
+  - _type: "OtelComponentMapping"
+    name: "Kubernetes Resource Collection"
+    description: "Collection declarations and their generation-bound feedback"
+    identifier: "urn:stackpack:otel-k8s-crd:otel-component-mapping:resource-collection"
+    input:
+      signal:
+        - "LOGS"
+      resource:
+        scope:
+          log:
+            action: "log.body['type'] in ['ADDED', 'MODIFIED'] ? 'CREATE' : log.body['type'] == 'DELETED' ? 'DELETE' : 'CONTINUE'"
+            condition: >-
+              log.eventName == 'KubernetesCustomResourceEvent' &&
+              log.attributes['k8s.resource.group'] == 'observability.suse.com' &&
+              log.attributes['k8s.resource.kind'] == 'ResourceCollection'
+    vars:
+      - name: "clusterName"
+        value: "resource.attributes['k8s.cluster.name']"
+      - name: "name"
+        value: "log.attributes['k8s.object.name']"
+      - name: "object"
+        value: "log.body['object']"
+      - name: "status"
+        value: "'status' in log.body['object'] ? log.body['object']['status'] : {}"
+      - name: "readyConditions"
+        value: >-
+          'status' in log.body['object'] && 'conditions' in log.body['object']['status']
+            ? log.body['object']['status']['conditions'].filter(c, c['type'] == 'Ready')
+            : []
+      - name: "generation"
+        value: >-
+          'generation' in log.body['object']['metadata']
+            ? log.body['object']['metadata']['generation'] : 0
+    output:
+      identifier: "'urn:k8s:cr:/cluster/' + vars.clusterName + ':namespace/:group/observability.suse.com:kind/ResourceCollection:name/' + vars.name"
+      name: "vars.name"
+      typeName: "'custom resource'"
+      required:
+        configuration: "omit(vars.object, ['status', 'metadata'])"
+        tags:
+          - source: "'otel-k8s-crd'"
+            target: "stackpack"
+          - source: "'ResourceCollection'"
+            target: "k8s.resource.kind"
+          - source: "'observability.suse.com'"
+            target: "k8s.resource.group"
+          - source: "vars.name"
+            target: "k8s.resource.name"
+          - source: "vars.clusterName"
+            target: "cluster-name"
+          - source: >-
+              !(vars.generation > 0 && 'observedGeneration' in vars.status &&
+              vars.status['observedGeneration'] == vars.generation &&
+              size(vars.readyConditions) > 0 &&
+              'observedGeneration' in vars.readyConditions[0] &&
+              vars.readyConditions[0]['observedGeneration'] == vars.generation) ? 'Awaiting reconciliation' :
+              vars.readyConditions[0]['status'] == 'True' ? 'Collecting' :
+              vars.readyConditions[0]['status'] == 'False'
+                ? (vars.readyConditions[0]['reason'] == 'ResourcesPending' ? 'Pending' : 'Blocked')
+                : 'Unknown'
+            target: "k8s.collection.state"
+      optional:
+        status: "vars.status"
+        tags:
+          - source: >-
+              (vars.generation > 0 && 'observedGeneration' in vars.status &&
+              vars.status['observedGeneration'] == vars.generation &&
+              size(vars.readyConditions) > 0 &&
+              'observedGeneration' in vars.readyConditions[0] &&
+              vars.readyConditions[0]['observedGeneration'] == vars.generation)
+                ? vars.readyConditions[0]['reason'] : ''
+            target: "k8s.collection.reason"
+          - source: >-
+              (vars.generation > 0 && 'observedGeneration' in vars.status &&
+              vars.status['observedGeneration'] == vars.generation &&
+              size(vars.readyConditions) > 0 &&
+              'observedGeneration' in vars.readyConditions[0] &&
+              vars.readyConditions[0]['observedGeneration'] == vars.generation)
+                ? vars.readyConditions[0]['message']
+                : 'Waiting for feedback on the current declaration.'
+            target: "k8s.collection.message"
+          - source: "string(vars.object['metadata']['generation'])"
+            target: "k8s.collection.generation"
+          - source: "string(vars.status['observedGeneration'])"
+            target: "k8s.collection.observed-generation"
+          - source: "string(size(vars.object['spec']['resources']))"
+            target: "k8s.collection.selections"
+          - source: "vars.object['metadata']['creationTimestamp']"
+            target: "k8s.creationTimestamp"
+    expireAfter: 900000
+    rank:
+      specificity: 100

@@ -107,6 +107,35 @@ jobs:
           cat "${output}"
           grep -q "undeclared.*undeclaredValidationControl" "${output}"
 
+      - name: Check out the pinned collector mapping engine
+        if: matrix.stackpack == 'otel-k8s-crd'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: StackVista/sts-opentelemetry-collector
+          ref: 9be47421ee2a5eaf9d5643e98374c72eb4d30047
+          path: .ci/collector
+          persist-credentials: false
+
+      - name: Set up the collector's Go toolchain
+        if: matrix.stackpack == 'otel-k8s-crd'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .ci/collector/connector/topologyconnector/go.mod
+          cache: false
+
+      - name: Test ResourceCollection mapping and presentation
+        if: matrix.stackpack == 'otel-k8s-crd'
+        env:
+          GOTOOLCHAIN: local
+        run: |
+          python3 tests/otel-k8s-crd/run.py --collector-source .ci/collector
+          test -x "${JAVA_HOME_21_X64}/bin/java"
+          test -x "${JAVA_HOME_21_X64}/bin/javac"
+          python3 tests/otel-k8s-crd/presentation.py \
+            --validator-image "${VALIDATOR_IMAGE}" \
+            --java "${JAVA_HOME_21_X64}/bin/java" \
+            --javac "${JAVA_HOME_21_X64}/bin/javac"
+
   package:
     name: package (${{ matrix.stackpack }})
     needs: [discover-stackpacks, validate, check-version-bump]

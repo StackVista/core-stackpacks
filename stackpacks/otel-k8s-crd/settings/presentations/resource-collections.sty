@@ -1,0 +1,147 @@
+nodes:
+  - _type: ComponentPresentation
+    name: "Resource Collection"
+    description: "Presentation for Kubernetes collection declarations"
+    identifier: "urn:stackpack:otel-k8s-crd:component-presentation:resource-collection"
+    binding:
+      _type: ComponentPresentationQueryBinding
+      query: >-
+        label = "stackpack:otel-k8s-crd" and label = "source-type:custom resource"
+        and label = "k8s.resource.group:observability.suse.com"
+        and label = "k8s.resource.kind:ResourceCollection"
+    rank:
+      specificity: 20
+    presentation:
+      icon: !icon cr.svg
+      filters:
+        - filterId: "crd_cluster"
+      topology:
+        groupingEnabled: true
+        showIndirectRelations: false
+        minimumGroupSize: 8
+        groupedByLayers: false
+        groupedByDomains: true
+        autoGrouping: true
+        connectedComponents: true
+      overview:
+        name:
+          singular: "resource collection"
+          plural: "resource collections"
+          title: "Resource Collections"
+        mainMenu:
+          group: "Kubernetes"
+          order: 0
+        columns:
+          - columnId: cr_name
+            title: "Name"
+            projection:
+              _type: ComponentLinkProjection
+              name: "name"
+              identifier: "identifiers[0]"
+          - columnId: collection_state
+            title: "Collection"
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.state')"
+          - columnId: collection_reason
+            title: "Reason"
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.reason')"
+          - columnId: collection_selections
+            title: "Selections"
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.selections')"
+          - columnId: cr_cluster
+            title: "Cluster"
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('cluster-name')"
+          - columnId: cr_age
+            title: "Age"
+            projection:
+              _type: DurationProjection
+              startTime: "tags.singleValue('k8s.creationTimestamp')"
+      highlight:
+        title: "Resource Collection"
+        fields:
+          - fieldId: collection_state
+            title: "Collection"
+            order: 100.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.state')"
+          - fieldId: collection_reason
+            title: "Reason"
+            order: 95.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.reason')"
+          - fieldId: collection_message
+            title: "Collection details"
+            order: 90.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.message')"
+          - fieldId: collection_generation
+            title: "Declaration generation"
+            order: 80.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.generation')"
+          - fieldId: collection_observed_generation
+            title: "Observed generation"
+            order: 75.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.observed-generation')"
+          - fieldId: collection_selections
+            title: "Selections"
+            order: 70.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('k8s.collection.selections')"
+          - fieldId: kind
+            title: "Kind"
+            order: 60.0
+            projection:
+              _type: ComponentLinkProjection
+              name: "tags.singleValue('k8s.resource.kind')"
+              identifier: "'urn:k8s:crd:/cluster/' + tags.singleValue('cluster-name') + ':group/' + tags.singleValue('k8s.resource.group') + ':kind/' + tags.singleValue('k8s.resource.kind')"
+          - fieldId: cluster
+            title: "Cluster"
+            order: 50.0
+            projection:
+              _type: TextProjection
+              value: "tags.singleValue('cluster-name')"
+          - fieldId: age
+            title: "Age"
+            order: 40.0
+            projection:
+              _type: DurationProjection
+              startTime: "tags.singleValue('k8s.creationTimestamp')"
+          - fieldId: labels
+            title: "Labels"
+            order: 10.0
+            projection:
+              _type: TagProjection
+        provisioning:
+          topologySourceSelector: "source.identifier == identifiers[0]"
+          showConfiguration: true
+          showStatus: true
+        relatedResources:
+          - resourceId: "cr_definition"
+            title: "Custom Resource Definition"
+            order: 1.0
+            topologyQuery: >-
+              (withNeighborsOf(direction = "both",
+                components = (identifier = "${identifiers[0]}"),
+                levels = "1")) and label = "source-type:custom resource definition"
+            presentationIdentifier: "urn:stackpack:otel-k8s-crd:component-presentation:custom-resource-definition"
+        events:
+          showEvents: true
+          relatedResourcesQuery: |
+            identifier = "${identifiers[0]}"
+              OR
+            (withNeighborsOf(direction = "both", components = (identifier = "${identifiers[0]}"), levels = "1") and label = "source-type:custom resource definition")

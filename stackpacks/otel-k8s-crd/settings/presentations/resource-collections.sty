@@ -1,6 +1,6 @@
 nodes:
   - _type: ComponentPresentation
-    name: "Resource Collection"
+    name: "Collection Declaration"
     description: "Presentation for Kubernetes collection declarations"
     identifier: "urn:stackpack:otel-k8s-crd:component-presentation:resource-collection"
     binding:
@@ -25,12 +25,12 @@ nodes:
         connectedComponents: true
       overview:
         name:
-          singular: "resource collection"
-          plural: "resource collections"
-          title: "Resource Collections"
+          singular: "collection declaration"
+          plural: "collection declarations"
+          title: "Collection Declarations"
         mainMenu:
           group: "Kubernetes"
-          order: 0
+          order: 1
         columns:
           - columnId: cr_name
             title: "Name"
@@ -64,7 +64,7 @@ nodes:
               _type: DurationProjection
               startTime: "tags.singleValue('k8s.creationTimestamp')"
       highlight:
-        title: "Resource Collection"
+        title: "Collection Declaration"
         fields:
           - fieldId: collection_state
             title: "Collection"

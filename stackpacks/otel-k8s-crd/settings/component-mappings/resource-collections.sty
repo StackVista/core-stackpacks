@@ -28,10 +28,17 @@ nodes:
           'status' in log.body['object'] && 'conditions' in log.body['object']['status']
             ? log.body['object']['status']['conditions'].filter(c, c['type'] == 'Ready')
             : []
-      - name: "generation"
+      - name: "current"
         value: >-
-          'generation' in log.body['object']['metadata']
-            ? log.body['object']['metadata']['generation'] : 0
+          'generation' in log.body['object']['metadata'] &&
+          log.body['object']['metadata']['generation'] > 0 &&
+          'status' in log.body['object'] &&
+          'observedGeneration' in log.body['object']['status'] &&
+          log.body['object']['status']['observedGeneration'] == log.body['object']['metadata']['generation'] &&
+          'conditions' in log.body['object']['status'] &&
+          log.body['object']['status']['conditions'].exists(c,
+            c['type'] == 'Ready' && 'observedGeneration' in c &&
+            c['observedGeneration'] == log.body['object']['metadata']['generation'])
     output:
       identifier: "'urn:k8s:cr:/cluster/' + vars.clusterName + ':namespace/:group/observability.suse.com:kind/ResourceCollection:name/' + vars.name"
       name: "vars.name"
@@ -50,11 +57,7 @@ nodes:
           - source: "vars.clusterName"
             target: "cluster-name"
           - source: >-
-              !(vars.generation > 0 && 'observedGeneration' in vars.status &&
-              vars.status['observedGeneration'] == vars.generation &&
-              size(vars.readyConditions) > 0 &&
-              'observedGeneration' in vars.readyConditions[0] &&
-              vars.readyConditions[0]['observedGeneration'] == vars.generation) ? 'Awaiting reconciliation' :
+              !vars.current ? 'Awaiting reconciliation' :
               vars.readyConditions[0]['status'] == 'True' ? 'Collecting' :
               vars.readyConditions[0]['status'] == 'False'
                 ? (vars.readyConditions[0]['reason'] == 'ResourcesPending' ? 'Pending' : 'Blocked')
@@ -64,20 +67,10 @@ nodes:
         status: "vars.status"
         tags:
           - source: >-
-              (vars.generation > 0 && 'observedGeneration' in vars.status &&
-              vars.status['observedGeneration'] == vars.generation &&
-              size(vars.readyConditions) > 0 &&
-              'observedGeneration' in vars.readyConditions[0] &&
-              vars.readyConditions[0]['observedGeneration'] == vars.generation)
-                ? vars.readyConditions[0]['reason'] : ''
+              vars.current ? vars.readyConditions[0]['reason'] : ''
             target: "k8s.collection.reason"
           - source: >-
-              (vars.generation > 0 && 'observedGeneration' in vars.status &&
-              vars.status['observedGeneration'] == vars.generation &&
-              size(vars.readyConditions) > 0 &&
-              'observedGeneration' in vars.readyConditions[0] &&
-              vars.readyConditions[0]['observedGeneration'] == vars.generation)
-                ? vars.readyConditions[0]['message']
+              vars.current ? vars.readyConditions[0]['message']
                 : 'Waiting for feedback on the current declaration.'
             target: "k8s.collection.message"
           - source: "string(vars.object['metadata']['generation'])"

@@ -2,13 +2,13 @@ nodes:
   - _type: ComponentPresentation
     name: "Collection Declaration"
     description: "Presentation for Kubernetes collection declarations"
-    identifier: "urn:stackpack:otel-k8s-crd:component-presentation:resource-collection"
+    identifier: "urn:stackpack:otel-k8s-crd:component-presentation:collection-declaration"
     binding:
       _type: ComponentPresentationQueryBinding
       query: >-
         label = "stackpack:otel-k8s-crd" and label = "source-type:custom resource"
         and label = "k8s.resource.group:observability.suse.com"
-        and label = "k8s.resource.kind:ResourceCollection"
+        and label = "k8s.resource.kind:CollectionDeclaration"
     rank:
       specificity: 20
     presentation:

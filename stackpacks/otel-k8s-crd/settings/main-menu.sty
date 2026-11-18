@@ -1,7 +1,15 @@
 nodes:
   - _type: MainMenuGroup
     name: Kubernetes
+    order: 0
     iconbase64: ""
     defaultOpen: true
     items: []
     identifier: "urn:stackpack:otel-k8s-crd:main-menu-group:kubernetes"
+  - _type: MainMenuGroup
+    name: Agent
+    order: -1
+    iconbase64: !icon agent.svg
+    defaultOpen: false
+    items: []
+    identifier: "urn:stackpack:otel-k8s-crd:main-menu-group:agent"

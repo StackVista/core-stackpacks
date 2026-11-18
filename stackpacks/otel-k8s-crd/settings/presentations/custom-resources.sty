@@ -8,7 +8,7 @@ nodes:
       query: >-
         label = "stackpack:otel-k8s-crd" and label = "source-type:custom resource"
         and not (label = "k8s.resource.group:observability.suse.com"
-          and label = "k8s.resource.kind:ResourceCollection")
+          and label = "k8s.resource.kind:CollectionDeclaration")
     rank:
       specificity: 10
     presentation:

@@ -1,8 +1,8 @@
 nodes:
   - _type: "OtelComponentMapping"
-    name: "Kubernetes Resource Collection"
+    name: "Kubernetes Collection Declaration"
     description: "Collection declarations and their generation-bound feedback"
-    identifier: "urn:stackpack:otel-k8s-crd:otel-component-mapping:resource-collection"
+    identifier: "urn:stackpack:otel-k8s-crd:otel-component-mapping:collection-declaration"
     input:
       signal:
         - "LOGS"
@@ -13,7 +13,7 @@ nodes:
             condition: >-
               log.eventName == 'KubernetesCustomResourceEvent' &&
               log.attributes['k8s.resource.group'] == 'observability.suse.com' &&
-              log.attributes['k8s.resource.kind'] == 'ResourceCollection'
+              log.attributes['k8s.resource.kind'] == 'CollectionDeclaration'
     vars:
       - name: "clusterName"
         value: "resource.attributes['k8s.cluster.name']"
@@ -40,7 +40,7 @@ nodes:
             c['type'] == 'Ready' && 'observedGeneration' in c &&
             c['observedGeneration'] == log.body['object']['metadata']['generation'])
     output:
-      identifier: "'urn:k8s:cr:/cluster/' + vars.clusterName + ':namespace/:group/observability.suse.com:kind/ResourceCollection:name/' + vars.name"
+      identifier: "'urn:k8s:cr:/cluster/' + vars.clusterName + ':namespace/:group/observability.suse.com:kind/CollectionDeclaration:name/' + vars.name"
       name: "vars.name"
       typeName: "'custom resource'"
       required:
@@ -48,7 +48,7 @@ nodes:
         tags:
           - source: "'otel-k8s-crd'"
             target: "stackpack"
-          - source: "'ResourceCollection'"
+          - source: "'CollectionDeclaration'"
             target: "k8s.resource.kind"
           - source: "'observability.suse.com'"
             target: "k8s.resource.group"

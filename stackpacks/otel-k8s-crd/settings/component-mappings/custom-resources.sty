@@ -13,7 +13,7 @@ nodes:
             condition: >-
               log.eventName == 'KubernetesCustomResourceEvent' &&
               !(log.attributes['k8s.resource.group'] == 'observability.suse.com' &&
-                log.attributes['k8s.resource.kind'] == 'ResourceCollection')
+                log.attributes['k8s.resource.kind'] == 'CollectionDeclaration')
     vars:
       - name: "clusterName"
         value: "resource.attributes['k8s.cluster.name']"

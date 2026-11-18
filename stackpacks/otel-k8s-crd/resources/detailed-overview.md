@@ -13,7 +13,7 @@ The StackPack defines SUSE Observability settings (component and relation mappin
 
 ### Resource collections
 
-ResourceCollection declarations appear in the **Collection Declarations** overview
+CollectionDeclaration declarations appear in the **Collection Declarations** overview
 under **Agent**. Their highlights show collection state, reason, details and
 the declaration and observed generations. Configuration contains the selections;
 status contains the collector's per-selection feedback.

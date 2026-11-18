@@ -12,7 +12,10 @@ nodes:
         condition: "'service.instance.id' in resource.attributes"
     vars:
       - name: "namespace"
-        value: "resource.attributes['service.namespace']"
+        value: >-
+          'service.namespace' in resource.attributes ?
+          resource.attributes['service.namespace'] :
+          ''
       - name: "service"
         value: "resource.attributes['service.name']"
       - name: "version"

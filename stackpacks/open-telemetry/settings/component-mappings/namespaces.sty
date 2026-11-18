@@ -9,7 +9,7 @@ nodes:
         - "METRICS"
       resource:
         action: "'CREATE'"
-        condition: "'service.namespace' in resource.attributes"
+        condition: "'service.namespace' in resource.attributes && resource.attributes['service.namespace'] != ''"
     vars:
       - name: "namespace"
         value: "resource.attributes['service.namespace']"

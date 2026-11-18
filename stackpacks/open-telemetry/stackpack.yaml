@@ -1,5 +1,5 @@
 name: "open-telemetry"
-version: "0.1.5"
+version: "0.1.6"
 schemaVersion: "2.0"
 displayName: "Open Telemetry"
 categories: [ "Open Telemetry" ]

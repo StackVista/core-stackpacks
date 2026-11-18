@@ -13,7 +13,7 @@ nodes:
         unit: s
       threshold: 5
       titleTemplate: Span duration
-      urnTemplate: "urn:opentelemetry:namespace/${service_namespace}:service/${service_name}"
+      urnTemplate: "urn:opentelemetry:namespace/${'service_namespace' in labels ? labels.service_namespace : ''}:service/${service_name}"
     description: |
       Monitors the duration of the server and consumer spans. When the 95th percentile of the duration is greater than the threshold (default 5s) the monitor has a Deviating state.
     function: urn:stackpack:common:monitor-function:threshold

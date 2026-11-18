@@ -9,7 +9,7 @@ nodes:
         unit: percent
       threshold: 5
       titleTemplate: Span error ratio
-      urnTemplate: "urn:opentelemetry:namespace/${service_namespace}:service/${service_name}:serviceInstance/${service_instance_id}"
+      urnTemplate: "urn:opentelemetry:namespace/${'service_namespace' in labels ? labels.service_namespace : ''}:service/${service_name}:serviceInstance/${service_instance_id}"
     description: |
       Percentage of server and consumer spans that are in an error state for the service instance.
     function: urn:stackpack:common:monitor-function:threshold

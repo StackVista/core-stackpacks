@@ -22,10 +22,9 @@ nodes:
         value: "resource.attributes['k8s.pod.name']"
       - name: "serviceNamespace"
         value: >-
-          'service.namespace' in resource.attributes &&
-          resource.attributes['service.namespace'] != '' ?
+          'service.namespace' in resource.attributes ?
           resource.attributes['service.namespace'] :
-          'default'
+          ''
       - name: "service"
         value: >-
           'service.name' in resource.attributes ?

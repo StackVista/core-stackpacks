@@ -15,10 +15,9 @@ nodes:
         value: "resource.attributes['aws.ecs.task.id']"
       - name: "namespace"
         value: >-
-          'service.namespace' in resource.attributes &&
-          resource.attributes['service.namespace'] != '' ?
+          'service.namespace' in resource.attributes ?
           resource.attributes['service.namespace'] :
-          'default'
+          ''
       - name: "service"
         value: "resource.attributes['service.name']"
       - name: "instanceId"

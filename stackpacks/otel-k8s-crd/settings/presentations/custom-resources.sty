@@ -5,7 +5,8 @@ nodes:
     identifier: "urn:stackpack:otel-k8s-crd:component-presentation:custom-resource"
     binding:
       _type: ComponentPresentationQueryBinding
-      query: (label = "stackpack:otel-k8s-crd" and label = "source-type:custom resource")
+      query: >-
+        label = "stackpack:otel-k8s-crd" and label = "source-type:custom resource"
     rank:
       specificity: 10
     presentation:

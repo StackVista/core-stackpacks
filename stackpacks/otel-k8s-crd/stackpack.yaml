@@ -1,5 +1,5 @@
 name: "otel-k8s-crd"
-version: "0.0.9"
+version: "0.0.10"
 schemaVersion: "2.0"
 displayName: "Kubernetes Custom Resources"
 categories: [ "Kubernetes" ]

@@ -11,6 +11,21 @@ The StackPack defines SUSE Observability settings (component and relation mappin
 
 - **instance of** - Links each Custom Resource to its defining Custom Resource Definition
 
+### Resource collections
+
+CollectionDeclaration declarations appear in the **Collection Declarations** overview
+under **Agent**. Their highlights show collection state, reason, details and
+the declaration and observed generations. Configuration contains the selections;
+status contains the collector's per-selection feedback.
+
+Declarations also appear in **Kubernetes → Custom Resources** as part of the
+custom-resource inventory.
+
+**Awaiting reconciliation** means the available feedback does not describe the
+current declaration generation. **Collecting**, **Pending** and **Blocked** reflect
+the collector's Ready condition. A blocked declaration can still collect its
+permitted selections; collection state is separate from component health.
+
 ### Data sources
 
 - CRD and CR discovery via the Kubernetes API server

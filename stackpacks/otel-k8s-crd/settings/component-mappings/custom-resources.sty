@@ -10,10 +10,7 @@ nodes:
         scope:
           log:
             action: "log.body['type'] in ['ADDED', 'MODIFIED'] ? 'CREATE' : log.body['type'] == 'DELETED' ? 'DELETE' : 'CONTINUE'"
-            condition: >-
-              log.eventName == 'KubernetesCustomResourceEvent' &&
-              !(log.attributes['k8s.resource.group'] == 'observability.suse.com' &&
-                log.attributes['k8s.resource.kind'] == 'CollectionDeclaration')
+            condition: log.eventName == 'KubernetesCustomResourceEvent'
     vars:
       - name: "clusterName"
         value: "resource.attributes['k8s.cluster.name']"
